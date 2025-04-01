@@ -5,7 +5,7 @@ const run = async () => {
     let chromiumExec = '';
 
     if (platform() === 'linux') {
-        chromiumExec = '/usr/bin/chromium-browser';
+        chromiumExec = '/root/.cache/puppeteer/chrome/linux-134.0.6998.165/chrome-linux64/chrome';
     }
 
     const browser = await puppeteer.launch({
