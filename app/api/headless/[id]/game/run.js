@@ -5,13 +5,13 @@ const run = async () => {
     let chromiumExec = '';
 
     if (platform() === 'linux') {
-        chromiumExec = '/root/.cache/puppeteer/chrome/linux-134.0.6998.165/chrome-linux64/chrome';
+        chromiumExec = '/root/.cache/puppeteer/chrome/linux-134.0.6998.165';
     }
 
     const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote'],
-        //executablePath: chromiumExec
+        executablePath: chromiumExec
     });
     const page = await browser.newPage({
         visualViewport: {
