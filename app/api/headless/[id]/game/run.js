@@ -11,7 +11,7 @@ const run = async () => {
     const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote'],
-        executablePath: chromiumExec
+        //executablePath: chromiumExec
     });
     const page = await browser.newPage({
         visualViewport: {
