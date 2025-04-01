@@ -5,6 +5,7 @@
   "scripts": {
     "_dev": "concurrently \"next dev\" \"bun run game/index.js --hot --watch\"",
     "dev": "bun run server.ts --hot --watch",
+    "tsx": "tsx server.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
