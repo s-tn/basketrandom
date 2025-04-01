@@ -1,0 +1,6 @@
+-- CreateTable
+CREATE TABLE "Socket" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "roomId" TEXT,
+    CONSTRAINT "Socket_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);

@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 10% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 10% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 10% 15%;
+
+    /* Basketball orange */
+    --primary: 24 90% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Court brown */
+    --secondary: 30 40% 58%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 30 20% 90%;
+    --muted-foreground: 20 10% 40%;
+
+    --accent: 24 90% 95%;
+    --accent-foreground: 24 90% 30%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 10% 85%;
+    --input: 20 10% 85%;
+    --ring: 24 90% 55%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark court wood color */
+    --background: 20 15% 12%;
+    --foreground: 0 0% 95%;
+
+    /* Slightly lighter than background */
+    --card: 20 15% 16%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 20 15% 16%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Keep basketball orange as primary */
+    --primary: 24 90% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Darker court brown */
+    --secondary: 30 30% 25%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 20 15% 20%;
+    --muted-foreground: 20 10% 70%;
+
+    --accent: 24 70% 20%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 20 15% 25%;
+    --input: 20 15% 25%;
+    --ring: 24 90% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Basketball pattern for dividers */
+.basketball-divider {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    hsl(var(--primary)),
+    hsl(var(--primary)) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
+/* Basketball texture */
+.basketball-texture {
+  background-color: hsl(var(--primary));
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0.2) 2px,
+    transparent 2px,
+    transparent 8px
+  );
+  border-radius: 9999px;
+}
+
+/* Dark mode court texture */
+.dark .court-texture {
+  background-image: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 30px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 30px
+    );
+}
+

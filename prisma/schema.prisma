@@ -1,0 +1,31 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js" // This generates the Prisma Client JS, which you can use in your application to interact with your database.
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Room {
+  host      String
+  createdAt DateTime @default(now())
+  id        String   @id
+  name      String
+  oppponent String?
+  started   Boolean  @default(false) // Indicates whether the game has started or not
+  Socket    Socket[]
+}
+
+model Socket {
+  id     Int     @id @default(autoincrement()) // This is the primary key for the Socket model, auto-incremented
+  roomId String? // This is a foreign key to the Room model, can be null if not associated with a room
+  type   String @default("lobby")
+  room   Room?   @relation(fields: [roomId], references: [id]) // This establishes a relation to the Room model
+}

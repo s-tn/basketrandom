@@ -1,0 +1,8 @@
+-- CreateTable
+CREATE TABLE "Room" (
+    "host" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "oppponent" TEXT NOT NULL
+);
