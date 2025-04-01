@@ -1,7 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import { Basketball } from "@/components/basketball-icon"
-import React from "react"
 
 export default function Home() {
   return (

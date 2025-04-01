@@ -1,6 +1,6 @@
 import express from 'express';
 import http from 'http';
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import run from './headless';
 import { randomUUID } from 'crypto';
 
@@ -12,7 +12,7 @@ const server = http.createServer(app);
 app.use(express.static('public'));
 
 (async function() {
-    const wss = new WebSocket.Server({ server });
+    const wss = new WebSocketServer({ server });
     const lobbies = {};
     
     wss.on('connection', (ws, req) => {
