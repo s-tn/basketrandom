@@ -10,6 +10,7 @@ export function GET() {
 const sockets: import("ws").WebSocket[] = [];
 
 setInterval(async () => {
+  console.log(sockets.length);
   const rooms = await prisma.room.findMany();
   for (const room of rooms) {
     // Notify each room's sockets about the current number of connections
