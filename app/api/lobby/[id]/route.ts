@@ -10,11 +10,7 @@ export function GET() {
 const sockets: import("ws").WebSocket[] = [];
 let server: import("ws").WebSocketServer | null = null;
 
-setInterval(async () => {
-  if (!server) {
-    console.log('WebSocket server not initialized, skipping inactive room check.');
-    return;
-  }
+export async function POST() {
   const _ = (sockets.length, server?.clients.size, 'Checking for inactive rooms');
   const rooms = await prisma.room.findMany();
   for (const room of rooms) {
@@ -30,7 +26,15 @@ setInterval(async () => {
       console.log(`No active sockets in room ${room.id}, deleting room.`);
     }
   }
-}, 10000);
+
+  return new Response(
+    JSON.stringify({ success: true }),
+    {
+      headers: { "Content-Type": "application/json" },
+      status: 200,
+    }
+  );
+}
 
 export async function SOCKET(
     client: import("ws").WebSocket,
