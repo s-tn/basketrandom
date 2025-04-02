@@ -11,6 +11,9 @@ const sockets: import("ws").WebSocket[] = [];
 let server: import("ws").WebSocketServer | null = null;
 
 export async function POST() {
+  return new Response(
+    'something'
+  );
   const _ = (sockets.length, server?.clients.size, 'Checking for inactive rooms');
   const rooms = await prisma.room.findMany();
   for (const room of rooms) {

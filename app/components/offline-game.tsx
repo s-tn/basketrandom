@@ -60,6 +60,29 @@ export function OfflineGame() {
     }
   }, [isLoading])
 
+  function cancer() {
+    return `<style>
+
+    @keyframes idk {
+        0% {
+            transform: rotate3d(1, 1, 1, 90deg);
+}
+        25% {
+            transform: rotate3d(0, 0, 0, 0deg);
+}
+        40% {
+            transform: rotate3d(-1, 1, 0, 80deg);
+}
+        70% {
+            transform: rotate3d(1, 2, 1, 9deg);
+}
+        100% {
+            transform: rotate3d(1, 1, 1, 90deg);
+}
+}
+</style>`;
+  }
+
   if (isLoading) {
     return (
       <Card>
