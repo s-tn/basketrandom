@@ -224,6 +224,16 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     }
   }
 
+  if (!room) {
+    // Fallback in case room is not found
+    return (
+      <div className="p-4">
+        <p className="text-red-500">Room not found. It may have been deleted.</p>
+        <Button onClick={() => push("/rooms")}>Back to Rooms</Button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
