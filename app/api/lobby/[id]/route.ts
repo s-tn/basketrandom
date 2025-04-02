@@ -11,12 +11,11 @@ const sockets: import("ws").WebSocket[] = [];
 let server: import("ws").WebSocketServer | null = null;
 
 setInterval(async () => {
-  console.log(sockets.length, server.clients.size, 'Checking for inactive rooms');
+  const _ = (sockets.length, server?.clients.size, 'Checking for inactive rooms');
   const rooms = await prisma.room.findMany();
   for (const room of rooms) {
     // Notify each room's sockets about the current number of connections
     const roomSockets = sockets.filter((socket: any) => socket.id === room.id && socket.readyState === 1); // Filter for open sockets in this room
-    console.log(sockets.map(socket => [socket.isPaused, socket.readyState]), room.id);
     if (roomSockets.length === 0) {
       await prisma.room.delete({
         where: {

@@ -20,7 +20,7 @@ const run = async () => {
         }
     });
     page.setViewport({ width: 640, height: 360 });
-    await page.goto('http://localhost:7600/');
+    await page.goto('http://localhost:7601/');
 
     return { browser, page };
 }
