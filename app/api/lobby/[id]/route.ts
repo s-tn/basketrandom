@@ -14,6 +14,7 @@ setInterval(async () => {
   for (const room of rooms) {
     // Notify each room's sockets about the current number of connections
     const roomSockets = sockets.filter((socket: any) => socket.id === room.id && socket.readyState === 1); // Filter for open sockets in this room
+    console.log(sockets.map(socket => [socket.isPaused, socket.readyState]), room.id);
     if (roomSockets.length === 0) {
       await prisma.room.delete({
         where: {

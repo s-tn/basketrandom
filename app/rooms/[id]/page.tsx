@@ -1,13 +1,20 @@
 import { RoomDetail } from "@/components/room-detail"
 import { notFound } from "next/navigation"
 import { getRoomById } from "@/lib/rooms"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default async function RoomPage({ params }: { params: { id: string } }) {
   try {
     const room = await getRoomById(params.id)
 
     if (!room) {
-      notFound()
+      return (
+        <div className="p-4">
+          <p className="text-red-500">Room not found. It may have been deleted.</p>
+          <Link href="/"><Button>Back to Rooms</Button></Link>
+        </div>
+      )
     }
 
     return (
