@@ -12,14 +12,13 @@ export default function RoomsPage() {
   const [ refetch, setRefetch ] = React.useState(0);
 
   useEffect(() => {
-    // Fetch rooms when the component mounts
     async function fetchRooms() {
       const roomsData = await getRooms();
       setRooms(roomsData.toSorted((a, b) => b.createdAt - a.createdAt));
     }
     
     fetchRooms();
-  }, []);
+  }, [refetch]); 
 
   setTimeout(() => {
     setRefetch(refetch + 1);
@@ -77,7 +76,7 @@ export default function RoomsPage() {
 
         <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-muted-foreground dark:border-muted/50">
           <Basketball className="w-12 h-12 mb-2 text-muted-foreground" />
-          <p>More courts coming soon...</p>
+          <p>Loading rooms...</p>
         </div>
       </div>
     </div>

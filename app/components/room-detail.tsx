@@ -100,7 +100,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     }
   }
 
-  let gameReady = room.players.length === 2 && room.started;
+  let gameReady = room?.players.length === 2 && room?.started;
 
   useEffect(() => {
     if (!playerName) return;
