@@ -8,9 +8,10 @@ export function GET() {
 }
 
 const sockets: import("ws").WebSocket[] = [];
+let server: import("ws").WebSocketServer | null = null;
 
 setInterval(async () => {
-  console.log(sockets.length);
+  console.log(sockets.length, server.clients.size, 'Checking for inactive rooms');
   const rooms = await prisma.room.findMany();
   for (const room of rooms) {
     // Notify each room's sockets about the current number of connections
@@ -31,8 +32,9 @@ setInterval(async () => {
 export async function SOCKET(
     client: import("ws").WebSocket,
     request: import("http").IncomingMessage,
-    server: import("ws").WebSocketServer
+    _server: import("ws").WebSocketServer
   ) {
+    server = _server || (request as any).server; // Ensure the server is set for the first time
     const id = request.url?.match(/^\/api\/lobby\/(.*)/)?.[1];
 
     if (!id) {
