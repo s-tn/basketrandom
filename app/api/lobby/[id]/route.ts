@@ -9,14 +9,29 @@ export function GET() {
 
 const sockets: import("ws").WebSocket[] = [];
 
+setInterval(async () => {
+  const rooms = await prisma.room.findMany();
+  for (const room of rooms) {
+    // Notify each room's sockets about the current number of connections
+    const roomSockets = sockets.filter((socket: any) => socket.id === room.id && socket.readyState === 1); // Filter for open sockets in this room
+    if (roomSockets.length === 0) {
+      await prisma.room.delete({
+        where: {
+          id: room.id,
+        },
+      });
+
+      console.log(`No active sockets in room ${room.id}, deleting room.`);
+    }
+  }
+}, 10000);
+
 export async function SOCKET(
     client: import("ws").WebSocket,
     request: import("http").IncomingMessage,
     server: import("ws").WebSocketServer
   ) {
     const id = request.url?.match(/^\/api\/lobby\/(.*)/)?.[1];
-
-    console.log(request.url);
 
     if (!id) {
       return client.close();
