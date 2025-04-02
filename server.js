@@ -20,7 +20,7 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   httpServer
     .on('request', async (req, res) => {
-      const parsedUrl = parse(req.url!, true);
+      const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     }).on('upgrade', (req, socket, head) => {
         console.log(req.url);

@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "_dev": "concurrently \"next dev\" \"bun run game/index.js --hot --watch\"",
-    "dev": "bun run server.ts --hot --watch",
-    "tsx": "tsc server.ts --noEmit && node server.js",
+    "dev": "node server.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

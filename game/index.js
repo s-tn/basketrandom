@@ -1,7 +1,7 @@
 import express from 'express';
 import http from 'http';
 import { WebSocketServer } from 'ws';
-import run from './headless';
+import run from './headless.js';
 import { randomUUID } from 'crypto';
 
 // Create an Express app
