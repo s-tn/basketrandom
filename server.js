@@ -13,7 +13,7 @@ setWebSocketServer(webSocketServer);
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
-const port = Number.parseInt(process.env.PORT ?? '3000');
+const port = Number.parseInt(process.env.PORT ?? '9000');
 const app = next({ dev, hostname, port, customServer: true });
 const handle = app.getRequestHandler();
 
@@ -30,6 +30,6 @@ app.prepare().then(() => {
     .listen(port, () => {
       console.log(` ▲ Ready on http://${hostname}:${port}`);
 
-      fetch('http://localhost:3000/api/lobby/something');
+      fetch('http://localhost:9000/api/lobby/something');
     });
 });

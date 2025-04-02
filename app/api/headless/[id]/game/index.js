@@ -230,6 +230,6 @@ app.use(express.static('public'));
 })()
 
 // Start the server on port 80
-server.listen(3001, () => {
-    console.log('Server running on port 3001');
+server.listen(9002, () => {
+    console.log('Server running on port 9002');
 });

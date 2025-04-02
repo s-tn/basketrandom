@@ -22,7 +22,7 @@ const run = async () => {
         }
     });
     page.setViewport({ width: 640, height: 360 });
-    await page.goto('http://localhost:7601/');
+    await page.goto('http://localhost:9001/');
 
     return { browser, page };
 }
@@ -38,8 +38,8 @@ const server = http.createServer((req, res) => {
     }).resume();
 });
 
-server.listen(7601, () => {
-    console.log('Headless client running at http://localhost:7601/');
+server.listen(9001, () => {
+    console.log('Headless client running at http://localhost:9001/');
 });
 
 export default run;
