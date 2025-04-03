@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
+import { Button } from "./ui/button"
 
 interface GameContainerProps {
   roomId: string
@@ -13,6 +14,8 @@ interface GameContainerProps {
 export function GameContainer({ roomId, players, ws }: GameContainerProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState("Loading game...")
+  const [ready, setReady] = useState(false);
+  const [countdown, setCountdown] = useState<number>(-1);
 
   useEffect(() => {
     // Simulate game loading
@@ -27,22 +30,34 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
     const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
     if (iframe) {
       const cw: any = iframe.contentWindow;
-      cw.addEventListener("message", (event: MessageEvent) => {
+      cw.addEventListener("message", async (event: MessageEvent) => {
         if (event.data.type === 'update') {
           //setMessage(event.data.data);
         }
         if (event.data.type === 'ready') {
           setMessage("Waiting on server...");
         }
+        if (event.data.type === 'loaded') {
+          setMessage("Waiting for start...")
+        }
         if (event.data.type === 'start') {
           setMessage("");
+
+          for (let i = 1; i < 4; i ++) {
+            setCountdown(3 - i);
+            await new Promise((resolve) => setTimeout(resolve, 1000)); 
+          }
+
+          setCountdown(-1);
+
+          cw.unpause();
         }
       });
       cw.addEventListener("ready", (event: MessageEvent) => {
         cw.init(ws);
       });
     }
-  }, [isLoading])
+  }, [isLoading, ws])
 
   if (isLoading) {
     return (
@@ -82,10 +97,34 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
             (<>
               <div className="absolute inset-0 bg-black opacity-85"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-t-primary rounded-full animate-spin"></div>
+                {
+                  message !== "Waiting for start..." && <div className="w-12 h-12 border-4 border-t-primary rounded-full animate-spin"></div>
+                }
                 <span className="absolute top-16 text-lg text-white">{message}</span>
+                {
+                  message === "Waiting for start..." ? (
+                    <Button 
+                      className={"py-6 px-10 text-lg"}
+                      disabled={ready}
+                      onClick={() => {
+                        setReady(true);
+                        const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
+                        if (iframe) {
+                          const cw: any = iframe.contentWindow;
+                          cw.ready();
+                        }
+                      }}>
+                        Ready
+                      </Button>
+                  ) : null
+                }
               </div>
             </>)
+          }
+          {
+            <div className={"absolute inset-0 bg-black opacity-85 flex items-center justify-center" + ((countdown + 1) ? "" : " hidden")}>
+              <span className="text-white text-4xl">{countdown + 1}</span>
+            </div>
           }
           {/* Game iframe */}
           <div className="flex items-center justify-center bg-black aspect-video">

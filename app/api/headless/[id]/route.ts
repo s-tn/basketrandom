@@ -22,8 +22,18 @@ export async function SOCKET(
     const lobbyId: string = request.url!.split('/')[3];
     (client as any).lobbyId = lobbyId;
     (client as any).id = randomUUID();
+    (client as any).ready = false;
 
     console.log(`Client connected to lobby: ${lobbyId}`);
+
+    client.addEventListener('message', (message) => {
+        try {
+            if (JSON.parse(message.data.toString()).type === 'ready') {
+                (client as any).ready = true; 
+                console.log(`Client ${(client as any).id} in lobby ${lobbyId} is ready`);
+            }
+        } catch(e) {console.log(e);}
+    });
 
     if (!lobbies[lobbyId]) {
         lobbies[lobbyId] = [];
@@ -66,6 +76,34 @@ async function createLobby(id: string) {
     clients.forEach((cli) => {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
     });
+
+    async function pause() {
+        return await browser.page.evaluate(() => {
+            let win: any = window;
+            return new Promise((resolve) => {
+                if (win.c3_runtimeInterface && win.c3_runtimeInterface._localRuntime) {
+                    win.c3_runtimeInterface._localRuntime.SetSuspended(true);
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+        })
+    } 
+
+    async function resume() {
+        return await browser.page.evaluate(() => {
+            let win: any = window;
+            return new Promise((resolve) => {
+                if (win.c3_runtimeInterface && win.c3_runtimeInterface._localRuntime) {
+                    win.c3_runtimeInterface._localRuntime.SetSuspended(false);
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+        })
+    }
 
     await browser.page.evaluate(() => {
         let win: any = window;
@@ -154,6 +192,25 @@ async function createLobby(id: string) {
 
     console.log(`Game started in lobby: ${id}`);
 
+    await pause();
+
+    [...sockets].forEach(client => {
+        if (client.lobbyId === id) {
+            client.send('loaded');
+        }
+    });
+
+
+    await new Promise<void>((resolve) => {
+        let int = setInterval(() => {
+            if (clients.filter(cli => cli.ready).length === 2) {
+                console.log('Both clients are ready, starting game');
+                resolve();
+                clearInterval(int);
+            }
+        }, 500);
+    });
+
     /*setInterval(async () => {
         await browser.page.screenshot({
             path: 'screenshot.png',
@@ -202,6 +259,15 @@ async function createLobby(id: string) {
     }   
 
     console.log(`Starting transmission: ${id}`);
+
+    await new Promise<void>((resolve) => {
+        setTimeout(() => {
+            console.log(`Transmission started: ${id}`);
+            resolve();
+        }, 3000);
+    });
+
+    await resume();
 
     browser.page.on('console', async (msg) => {
         const data = msg.text();

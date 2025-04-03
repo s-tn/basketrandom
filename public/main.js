@@ -5,6 +5,17 @@ window.init = async function startGame(url) {
         ws.send(JSON.stringify({ type: 'key', event: event.detail.type, key: event.detail.key }));
     });
 
+    window.ready = function() {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ready' }));
+        }
+    }
+
+    window.unpause = function() {
+        document.querySelector('iframe').contentWindow.c3_runtimeInterface._localRuntime.SetSuspended(false);
+        document.querySelector('iframe').focus();
+    }
+
     let currentId = 0;
 
     ws.addEventListener('message', (event) => {
@@ -17,9 +28,12 @@ window.init = async function startGame(url) {
             console.error(e);
         }
 
+        if (event.data === 'loaded') {
+            window.postMessage({ type: 'loaded' }, '*');
+        }
+
         if (event.data === 'start') {
             document.querySelector('iframe').contentWindow.started = true;
-            document.querySelector('iframe').contentWindow.c3_runtimeInterface._localRuntime.SetSuspended(false);
             window.postMessage({ type: 'start' }, '*');
             setInterval(() => {
                 /*getPing(ws).then((ping) => {
@@ -28,9 +42,9 @@ window.init = async function startGame(url) {
             }, 1000);
             setInterval(() => {
                 for (const head of document.querySelector('iframe').contentWindow.heads) {
-                    head.x = head.savedX;
-                    head.y = head.savedY;
-                    head.angle = head.savedAngle;
+                    //head.x = head.savedX;
+                    //head.y = head.savedY;
+                    //head.angle = head.savedAngle;
                 }
 
                 for (const player of document.querySelector('iframe').contentWindow.players) {

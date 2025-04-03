@@ -19,6 +19,15 @@ app.use(express.static('public'));
         const lobbyId = req.url.split('/')[2];
         ws.lobbyId = lobbyId;
         ws.id = randomUUID();
+        ws.ready = false;
+
+        ws.addEventListener('message', (message) => {
+            if (message.toString() === 'ready') {
+                ws.ready = true; 
+                console.log(`Client ${ws.id} in lobby ${lobbyId} is ready`);
+            }
+        });
+
 
         console.log(`Client connected to lobby: ${lobbyId}`);
 
@@ -63,6 +72,32 @@ app.use(express.static('public'));
         clients.forEach((cli) => {
             cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
         });
+
+        async function pause() {
+            return await browser.page.evaluate(() => {
+                return new Promise((resolve) => {
+                    if (window.c3_runtimeInterface && window.c3_runtimeInterface._localRuntime) {
+                        window.c3_runtimeInterface._localRuntime.SetSuspended(true);
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                });
+            })
+        } 
+
+        async function resume() {
+            return await browser.page.evaluate(() => {
+                return new Promise((resolve) => {
+                    if (window.c3_runtimeInterface && window.c3_runtimeInterface._localRuntime) {
+                        window.c3_runtimeInterface._localRuntime.SetSuspended(false);
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                });
+            })
+        }
 
         await browser.page.evaluate(() => {
             Object.defineProperties(window, {
@@ -148,6 +183,28 @@ app.use(express.static('public'));
         await browser.page.mouse.click((width / 2) + 100, height / 2);
     
         console.log(`Game started in lobby: ${id}`);
+
+        await pause();
+
+        await new Promise((resolve) => {
+            setInterval(() => {
+                if (clients.filter(cli => cli.ready).length === 2) {
+                    console.log('Both clients are ready, starting game');
+                    clients.forEach((cli) => {
+                        cli.send(JSON.stringify({ type: 'start', message: 'Game start', timeout: 3000}));
+                    });
+                    resolve();
+                }
+            });
+        });
+
+        await new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 3000);
+        });
+
+        await resume();
     
         /*setInterval(async () => {
             await browser.page.screenshot({
@@ -168,7 +225,7 @@ app.use(express.static('public'));
                 client.send('start');
     
                 client.on('message', async (message) => {
-                    if (message.toString() === 'ping') return;
+                    if (message.toString() === 'ping' || MessageChannel.toString() === 'ready') return;
     
                     const data = JSON.parse(message.toString());
     
