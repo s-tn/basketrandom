@@ -12,21 +12,23 @@ const __dirname = (import.meta.url ?
         }
     })()).replace('/game/run.js', '/game/');
 
+let chromiumExec = '';
+
+if (platform() === 'linux') {
+    // chromiumExec = '/root/.cache/puppeteer/chrome-headless-shell/linux-134.0.6998.165';
+}
+
+console.log(__dirname + 'data');
+
+const browserPromise = puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote', '--disable-gl-drawing-for-tests'],
+    executablePath: chromiumExec,
+    userDataDir: __dirname + 'data'
+});
+
 const run = async () => {
-    let chromiumExec = '';
-
-    if (platform() === 'linux') {
-        // chromiumExec = '/root/.cache/puppeteer/chrome-headless-shell/linux-134.0.6998.165';
-    }
-
-    console.log(__dirname + 'data');
-
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote', '--disable-gl-drawing-for-tests'],
-        executablePath: chromiumExec,
-        userDataDir: __dirname + 'data'
-    });
+    const browser = await browserPromise;
     const page = await browser.newPage({
         visualViewport: {
             innerWidth: 640,

@@ -289,10 +289,10 @@ async function createLobby(id: string) {
             console.log('data:' + btoa(JSON.stringify({
                 type: "event",
                 event: "update",
-                players: win.players.map((player: any) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars })),
-                heads: win.heads.map((head: any) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars })),
-                arms: win.arms.map((arm: any) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars })),
-                ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who} },
+                players: win.players.map((player) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars, velocity: player.behaviors.Physics.getVelocity() })),
+                heads: win.heads.map((head) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars, velocity: head.behaviors.Physics.getVelocity() })),
+                arms: win.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars, velocity: [0, 0] })),
+                ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
             })));
         }, 1000 / 200);
 

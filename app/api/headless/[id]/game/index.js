@@ -274,10 +274,10 @@ app.use(express.static('public'));
                 console.log('data:' + btoa(JSON.stringify({
                     type: "event",
                     event: "update",
-                    players: window.players.map((player) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars })),
-                    heads: window.heads.map((head) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars })),
-                    arms: window.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars })),
-                    ball: { x: window.ball.x, y: window.ball.y, instVars: {hold: window.ball.instVars.hold, who: window.ball.instVars.who} },
+                    players: window.players.map((player) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars, velocity: player.behaviors.Physics.getVelocity() })),
+                    heads: window.heads.map((head) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars, velocity: head.behaviors.Physics.getVelocity() })),
+                    arms: window.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars, velocity: [0, 0] })),
+                    ball: { x: window.ball.x, y: window.ball.y, instVars: {hold: window.ball.instVars.hold, who: window.ball.instVars.who}, velocity: window.ball.behaviors.Physics.getVelocity() },
                 })));
             }, 1000 / 200);
     

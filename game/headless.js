@@ -3,30 +3,6 @@
 import puppeteer from 'puppeteer';
 import { platform } from 'os';
 
-const run = async () => {
-    let chromiumExec = '';
-
-    if (platform() === 'linux') {
-        chromiumExec = '/usr/bin/chromium-browser';
-    }
-
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote'],
-        executablePath: chromiumExec
-    });
-    const page = await browser.newPage({
-        visualViewport: {
-            innerWidth: 640,
-            innerHeight: 360
-        }
-    });
-    page.setViewport({ width: 640, height: 360 });
-    await page.goto('http://localhost:9001/');
-
-    return { browser, page };
-}
-
 import http from 'http';
 import nodeStatic from 'node-static';
 
@@ -41,5 +17,3 @@ const server = http.createServer((req, res) => {
 server.listen(9001, () => {
     console.log('Headless client running at http://localhost:9001/');
 });
-
-export default run;

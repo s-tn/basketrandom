@@ -51,6 +51,10 @@ window.init = async function startGame(url) {
                     player.x = player.savedX;
                     player.y = player.savedY;
                     player.angle = player.savedAngle;
+                    if (player.savedVelocity) {
+                        player.savedX += (player.savedVelocity[0]) / 1000;
+                        player.savedY += (player.savedVelocity[1]) / 1000;
+                    }
                 }
 
                 for (const arm of document.querySelector('iframe').contentWindow.arms) {
@@ -61,6 +65,7 @@ window.init = async function startGame(url) {
 
                 document.querySelector('iframe').contentWindow.ball.x = document.querySelector('iframe').contentWindow.ball.savedX;
                 document.querySelector('iframe').contentWindow.ball.y = document.querySelector('iframe').contentWindow.ball.savedY;
+                document.querySelector('iframe').contentWindow.ball.behaviors.Physics.setVelocity(...(document.querySelector('iframe').contentWindow.ball.savedVelocity || [0, 0]));
             }, 1);
 
             ws.addEventListener('message', (event) => {
@@ -85,16 +90,19 @@ window.init = async function startGame(url) {
                                 if (key === 'x' && delta > 0) {
                                     playerInstance.x = player.x;
                                     playerInstance.savedX = player.x;
+                                    playerInstance.savedVelocity = player.velocity;
                                 }
 
                                 if (key === 'y' && delta > 0) {
                                     playerInstance.y = player.y;
                                     playerInstance.savedY = player.y;
+                                    playerInstance.savedVelocity = player.velocity;
                                 }
 
                                 if (key === 'angle' && delta > (Math.PI / 90, 0)) {
                                     playerInstance.angle = player.angle;
                                     playerInstance.savedAngle = player.angle;
+                                    playerInstance.savedVelocity = player.velocity;
                                 }
                             });
 
@@ -115,16 +123,19 @@ window.init = async function startGame(url) {
                                 if (key === 'y' && delta > 0) {
                                     headInstance.y = head.y;
                                     headInstance.savedY = head.y;
+                                    headInstance.savedVelocity = head.velocity;
                                 }
 
                                 if (key === 'angle' && delta > (Math.PI / 180, 0)) {
                                     headInstance.angle = head.angle;
                                     headInstance.savedAngle = head.angle;
+                                    headInstance.savedVelocity = head.velocity;
                                 }
 
                                 if (key === 'x' && delta > 0) {
                                     headInstance.x = head.x;
                                     headInstance.savedX = head.x;
+                                    headInstance.savedVelocity = head.velocity;
                                 }
                             });
 
@@ -145,16 +156,19 @@ window.init = async function startGame(url) {
                                 if (key === 'x' && delta > 0) {
                                     armInstance.x = arm.x;
                                     armInstance.savedX = arm.x;
+                                    armInstance.savedVelocity = arm.velocity;
                                 }
 
                                 if (key === 'y' && delta > 0) {
                                     armInstance.y = arm.y;
                                     armInstance.savedY = arm.y;
+                                    armInstance.savedVelocity = arm.velocity;
                                 }
 
                                 if (key === 'angle' && delta > (Math.PI / 180, 0)) {
                                     armInstance.angle = arm.angle;
                                     armInstance.savedAngle = arm.angle;
+                                    armInstance.savedVelocity = arm.velocity;
                                 }
                             });
 
@@ -168,6 +182,7 @@ window.init = async function startGame(url) {
                         ballInstance.y = data.ball.y;
                         ballInstance.savedX = data.ball.x;
                         ballInstance.savedY = data.ball.y;
+                        ballInstance.savedVelocity = data.ball.velocity;
                         for (let [key, value] of Object.entries(data.ball.instVars)) {
                             ballInstance.instVars[key] = value;
                         }
