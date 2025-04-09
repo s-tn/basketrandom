@@ -294,6 +294,7 @@ async function createLobby(id: string) {
                 arms: win.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars, velocity: [0, 0] })),
                 ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
             })));
+            console.clear();
         }, 1000 / 200);
 
         return true;
