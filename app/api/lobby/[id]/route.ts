@@ -73,6 +73,14 @@ export async function SOCKET(
       }));
     });
 
+    if (room.started) {
+      client.send(JSON.stringify({
+        type: "start-game",
+        roomId: id,
+        gameSocket: `/api/headless/${id}`,
+      }));
+    }
+
     client.on("message", (message) => {
       if (message.toString() === "ping") {
         client.send("pong");

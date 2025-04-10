@@ -18,11 +18,11 @@ export async function SOCKET(
     request: import("http").IncomingMessage,
     server: import("ws").WebSocketServer
   ) {
-    sockets.push(client);
     const lobbyId: string = request.url!.split('/')[3];
     (client as any).lobbyId = lobbyId;
     (client as any).id = randomUUID();
     (client as any).ready = false;
+    sockets.push(client);
 
     console.log(`Client connected to lobby: ${lobbyId}`);
 
@@ -33,6 +33,9 @@ export async function SOCKET(
                 console.log(`Client ${(client as any).id} in lobby ${lobbyId} is ready`);
             }
         } catch(e) {console.log(e);}
+        if (message.data.toString() === 'ping') {
+            client.send('pong');
+        }
     });
 
     if (!lobbies[lobbyId]) {
@@ -225,7 +228,7 @@ async function createLobby(id: string) {
 
     let gamers: any[] = [];
 
-    [...sockets].forEach(client => {
+    function subscribe(client) {
         if (client.lobbyId === id) {
             client.send('start');
 
@@ -247,6 +250,19 @@ async function createLobby(id: string) {
 
             gamers.push(client);
         }
+    }
+
+    sockets.push = new Proxy(sockets.push, {
+        apply: (target, thisArg, argumentsList) => {
+            const result = target.apply(thisArg, argumentsList);
+            if (argumentsList[0].lobbyId === id)
+                subscribe(argumentsList[0]);
+            return result;
+        }
+    });
+
+    [...sockets].forEach(client => {
+        subscribe(client);
     });
     
     let i = 0;
@@ -289,7 +305,7 @@ async function createLobby(id: string) {
             console.log('data:' + btoa(JSON.stringify({
                 type: "event",
                 event: "update",
-                players: win.players.map((player) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars, velocity: player.behaviors.Physics.getVelocity() })),
+                players: win.players.map((player) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars, velocity: player.behaviors.Physics.getVelocity(), angularVelocity: player.behaviors.Physics.angularVelocity })),
                 heads: win.heads.map((head) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars, velocity: head.behaviors.Physics.getVelocity() })),
                 arms: win.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars, velocity: [0, 0] })),
                 ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },

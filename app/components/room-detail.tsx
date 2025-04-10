@@ -316,7 +316,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
             <PingIndicator ping={ping} status={status} />
             {
               playerName === room.createdBy ?
-                <Button disabled={room.players.length < 2 || starting} id="start-game">Start Game</Button> :
+                <Button disabled={(room.players.length < 2 || !p1conn || !p2conn) || starting} id="start-game">Start Game</Button> :
                 <Button disabled className="opacity-50 cursor-not-allowed">
                   Waiting for Host...
                 </Button>

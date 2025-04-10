@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
 import { Button } from "./ui/button"
+import { ArrowBigUp } from "lucide-react"
 
 interface GameContainerProps {
   roomId: string
@@ -16,6 +17,10 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
   const [message, setMessage] = useState("Loading game...")
   const [ready, setReady] = useState(false);
   const [countdown, setCountdown] = useState<number>(-1);
+  const [w, setW] = useState(false);
+  const [upArrow, setUpArrow] = useState(false);
+  const [ping, setPing] = useState(0);
+  const [pingStatus, setPingStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
 
   useEffect(() => {
     // Simulate game loading
@@ -39,6 +44,10 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
         }
         if (event.data.type === 'loaded') {
           setMessage("Waiting for start...")
+          setPingStatus("connected");
+        }
+        if (event.data.type === 'ping') {
+          setPing(event.data.data);
         }
         if (event.data.type === 'start') {
           setMessage("");
@@ -51,6 +60,26 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
           setCountdown(-1);
 
           cw.unpause();
+        }
+      });
+      cw.addEventListener('basket-key', (event: CustomEvent<{key: string, type: string}>) => {
+        const { key, type } = event.detail;
+
+        if (type === 'keyup') {
+          if (key === 'ArrowUp') {
+            setUpArrow(false);
+          }
+          if (key === 'w') {
+            setW(false);
+          }
+        }
+        if (type === 'keydown') {
+          if (key === 'ArrowUp') {
+            setUpArrow(true);
+          }
+          if (key === 'w') {
+            setW(true);
+          }
         }
       });
       cw.addEventListener("ready", (event: MessageEvent) => {
@@ -81,14 +110,24 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
             </div>
           ))}
         </div>
-        <PingIndicator status={'connecting'} ping={100} />
+        <PingIndicator status={pingStatus} ping={ping} />
       </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="bg-muted">
+        <CardHeader className="bg-muted py-4">
           <CardTitle className="flex items-center justify-between">
             <span>Game Started</span>
-            <span className="text-sm font-normal">Room: {roomId}</span>
+            <div className="flex flex-row items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className={"border border-input p-2 rounded-sm h-full transition duration-100 ease-in-out" + (w ? " bg-primary" : "")}>
+                  <ArrowBigUp className="text-white" />
+                </div>
+                <div className={"border border-input p-2 rounded-sm h-full transition duration-100 ease-in-out" + (upArrow ? " bg-primary" : "")}>
+                  <ArrowBigUp className="text-white" />
+                </div>
+              </div>
+              <span className="text-sm font-normal">Room: {roomId}</span>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 relative">

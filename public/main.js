@@ -1,6 +1,26 @@
 window.init = async function startGame(url) {
     const ws = new WebSocket(`${location.protocol.replace('http', 'ws')}//${location.host}${url}`);
 
+    function setupBackup() {
+        ws.onclose = function() {
+            location.reload();
+        }
+    }
+
+    const ping = async (ws) => {
+        return new Promise((resolve, reject) => {
+            const start = Date.now();
+            ws.send('ping');
+            ws.onmessage = (event) => {
+                if (event.data === 'pong') {
+                    resolve(Date.now() - start);
+                }
+            }
+        });
+    }
+
+    setupBackup();
+
     window.addEventListener('basket-key', (event) => {
         ws.send(JSON.stringify({ type: 'key', event: event.detail.type, key: event.detail.key }));
     });
@@ -8,6 +28,12 @@ window.init = async function startGame(url) {
     window.ready = function() {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'ready' }));
+
+            setInterval(() => {
+                ping(ws).then((ping) => {
+                    window.postMessage({ type: 'ping', data: ping }, '*');
+                });
+            }, 1000);
         }
     }
 
@@ -24,9 +50,7 @@ window.init = async function startGame(url) {
             if (data.type === 'update') {
                 window.postMessage({ type: 'update', data: data.message }, '*');
             }
-        } catch(e) {
-            console.error(e);
-        }
+        } catch(e) {}
 
         if (event.data === 'loaded') {
             window.postMessage({ type: 'loaded' }, '*');
@@ -40,7 +64,7 @@ window.init = async function startGame(url) {
                     window.postMessage({ type: 'ping', ping: ping }, '*');
                 });*/
             }, 1000);
-            setInterval(() => {
+            const tick = () => {
                 for (const head of document.querySelector('iframe').contentWindow.heads) {
                     //head.x = head.savedX;
                     //head.y = head.savedY;
@@ -52,8 +76,11 @@ window.init = async function startGame(url) {
                     player.y = player.savedY;
                     player.angle = player.savedAngle;
                     if (player.savedVelocity) {
-                        player.savedX += (player.savedVelocity[0]) / 1000;
-                        player.savedY += (player.savedVelocity[1]) / 1000;
+                        player.savedX += (player.savedVelocity[0]) / 60;
+                        player.savedY += (player.savedVelocity[1]) / 60;
+                    }
+                    if (player.savedAngularVelocity) {
+                        player.savedAngle += (player.savedAngularVelocity) / 60;
                     }
                 }
 
@@ -63,10 +90,20 @@ window.init = async function startGame(url) {
                     arm.angle = arm.savedAngle;
                 }
 
-                document.querySelector('iframe').contentWindow.ball.x = document.querySelector('iframe').contentWindow.ball.savedX;
-                document.querySelector('iframe').contentWindow.ball.y = document.querySelector('iframe').contentWindow.ball.savedY;
-                document.querySelector('iframe').contentWindow.ball.behaviors.Physics.setVelocity(...(document.querySelector('iframe').contentWindow.ball.savedVelocity || [0, 0]));
-            }, 1);
+                const ball = document.querySelector('iframe').contentWindow.ball;
+
+                ball.x = ball.savedX;
+                ball.y = ball.savedY;
+                ball.savedX += (ball.savedVelocity[0]) / 60;
+                ball.savedY += (ball.savedVelocity[1]) / 60;
+            }
+
+            document.querySelector('iframe').contentWindow.c3_runtimeInterface._localRuntime.Tick = new Proxy(document.querySelector('iframe').contentWindow.c3_runtimeInterface._localRuntime.Tick, {
+                apply: function(target, thisArg, argumentsList) {
+                    try {tick();} catch(e) {}
+                    return target.apply(thisArg, argumentsList);
+                }
+            });
 
             ws.addEventListener('message', (event) => {
                 const data = JSON.parse(event.data);
@@ -91,18 +128,21 @@ window.init = async function startGame(url) {
                                     playerInstance.x = player.x;
                                     playerInstance.savedX = player.x;
                                     playerInstance.savedVelocity = player.velocity;
+                                    playerInstance.savedAngularVelocity = player.angularVelocity;
                                 }
 
                                 if (key === 'y' && delta > 0) {
                                     playerInstance.y = player.y;
                                     playerInstance.savedY = player.y;
                                     playerInstance.savedVelocity = player.velocity;
+                                    playerInstance.savedAngularVelocity = player.angularVelocity;
                                 }
 
                                 if (key === 'angle' && delta > (Math.PI / 90, 0)) {
                                     playerInstance.angle = player.angle;
                                     playerInstance.savedAngle = player.angle;
                                     playerInstance.savedVelocity = player.velocity;
+                                    playerInstance.savedAngularVelocity = player.angularVelocity;
                                 }
                             });
 
