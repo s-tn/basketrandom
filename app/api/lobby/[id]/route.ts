@@ -48,6 +48,7 @@ export async function SOCKET(
     const id = request.url?.match(/^\/api\/lobby\/(.*)/)?.[1];
 
     if (!id) {
+      console.log("Invalid room ID");
       return client.close();
     }
 
@@ -58,6 +59,7 @@ export async function SOCKET(
     });
 
     if (!room) {
+      console.log("Room not found");
       return client.close();
     }
 
