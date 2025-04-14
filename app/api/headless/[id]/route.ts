@@ -32,7 +32,7 @@ export async function SOCKET(
                 (client as any).ready = true; 
                 console.log(`Client ${(client as any).id} in lobby ${lobbyId} is ready`);
             }
-        } catch(e) {console.log(e);}
+        } catch(e) {}
         if (message.data.toString() === 'ping') {
             client.send('pong');
         }
@@ -270,6 +270,7 @@ async function createLobby(id: string) {
     function sendData(d: string) {
         i ++;
         gamers.forEach(gamer => {
+            
             gamer.send(d);
         });
     }   
@@ -294,7 +295,7 @@ async function createLobby(id: string) {
 
                 d.id = i;
 
-                sendData(JSON.stringify(d));
+                sendData('update['+compress(d));
             } catch {};
         }
     });
@@ -311,10 +312,93 @@ async function createLobby(id: string) {
                 ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
             })));
             console.clear();
-        }, 1000 / 200);
+        }, 1000 / 150);
 
         return true;
     });
+}
+
+function compress(data) {
+    const separators = [
+        ',',
+        '*',
+        '&',
+        '^',
+        '~',
+        '=',
+        '@',
+        '//',
+        '??',
+        '..',
+        'AA',
+        'QT',
+        '``',
+        '__'
+    ];
+    
+    const replacements = [
+        'ZA',
+        'ZB',
+        'ZC',
+        'ZD',
+        'ZE',
+        'ZF',
+        'ZG',
+        'ZH',
+        'ZI',
+        'ZJ',
+        'ZK',
+        'ZL',
+        'ZM',
+        'ZN',
+        'ZO',
+        'ZP',
+        'ZQ',
+        'ZR'
+    ];
+    
+    function iterCondense(data, layer = 0) {
+        if (typeof data !== 'object') return data;
+    
+        const sep = separators[layer];
+    
+        return Object.keys(data).map((key, i, obj) => {
+            if (!isNaN(parseFloat(data[key]))) data[key] = parseFloat(data[key]);
+    
+            if (Array.isArray(data[key])) {
+                return `${i === 0 ? '' : sep}${key}[${data[key].map(entry => `${iterCondense(entry, layer + 2)}`).join(separators[layer + 1])}]${i === obj.length - 1 ? '' : sep}`;
+            } else if (typeof data[key] === 'object') {
+                return `${i === 0 ? '' : sep}${key}{${iterCondense(data[key], layer + 1)}}${i === obj.length - 1 ? '' : sep}`;
+            } else if (typeof data[key] === 'number') {
+                return `${i === 0 ? '' : sep}${key}|${String(parseFloat(data[key].toFixed(8)))}|${i === obj.length - 1 ? '' : sep}`;
+            } else {
+                return `${i === 0 ? '' : sep}${key}|${String(data[key])}|${i === obj.length - 1 ? '' : sep}`;
+            }
+        }).join(sep);
+    }
+    
+    function compressNames(data) {
+        const matches = data.match(/\w{4,}/g);
+        const obj = {};
+        matches.forEach(match => obj[match] = (obj[match] || 0) + 1);
+    
+        for (var phrase in obj) {
+            if (obj[phrase] < 4) {
+                delete obj[phrase];
+                continue;
+            }
+    
+            obj[phrase] = replacements[Object.keys(obj).indexOf(phrase)];
+    
+            data = data.replaceAll(phrase, obj[phrase]);
+        }
+    
+        const dict = Object.entries(obj).map(entry => entry.toReversed()).map(([key, prop]) => `${key}=${prop}`).join(';');
+    
+        return `${dict}()${data}`;
+    }
+    
+    return compressNames(iterCondense(data));
 }
 
 /*
