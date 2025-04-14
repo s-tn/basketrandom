@@ -177,6 +177,8 @@ window.init = async function startGame(url) {
                 }
                 const data = decompress(event.data.toString().replace('update[', ''));
 
+                console.log(data);
+
                 if (data.id < currentId) {
                     return;
                 }

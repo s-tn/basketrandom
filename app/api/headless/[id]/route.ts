@@ -237,6 +237,8 @@ async function createLobby(id: string) {
 
                 const data = JSON.parse(message.toString());
 
+                console.log(data);
+
                 if (data.type === 'key') {
                     if (data.event === 'keydown') {
                         await browser.page.keyboard.down(data.key);
