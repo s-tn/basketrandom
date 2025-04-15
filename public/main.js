@@ -75,9 +75,18 @@ window.init = async function startGame(url) {
                     player.x = player.savedX;
                     player.y = player.savedY;
                     player.angle = player.savedAngle;
-                    if (player.savedVelocity) {
+                    if (Array.isArray(player.savedVelocity)) {
                         player.savedX += (player.savedVelocity[0]) / 60;
                         player.savedY += (player.savedVelocity[1]) / 60;
+                        if (player.savedVelocity[1] > 100) {
+                            player.savedVelocity[1] = 100;
+                        }
+                        if (player.y < 140 || player.savedVelocity[1] < 0) {
+                            player.savedVelocity[1] += 4;
+                        }
+                        if (player.savedVelocity[1] > 0 && player.y > 140) {
+                            player.savedVelocity[1] = 0;
+                        }
                     }
                     if (player.savedAngularVelocity) {
                         player.savedAngle += (player.savedAngularVelocity) / 60;
@@ -94,14 +103,19 @@ window.init = async function startGame(url) {
 
                 ball.x = ball.savedX;
                 ball.y = ball.savedY;
-                ball.savedX += (ball.savedVelocity[0]) / 60;
-                ball.savedY += (ball.savedVelocity[1]) / 60;
+
+                if (Array.isArray(ball.savedVelocity)) {
+                    ball.savedX += (ball.savedVelocity[0]) / 60;
+                    ball.savedY += (ball.savedVelocity[1]) / 60;
+                    ball.savedVelocity[1] += 4;
+                }
             }
 
             document.querySelector('iframe').contentWindow.c3_runtimeInterface._localRuntime.Tick = new Proxy(document.querySelector('iframe').contentWindow.c3_runtimeInterface._localRuntime.Tick, {
                 apply: function(target, thisArg, argumentsList) {
-                    try {tick();} catch(e) {}
-                    return target.apply(thisArg, argumentsList);
+                    let e = target.apply(thisArg, argumentsList);
+                    try {tick();} catch(e) {};
+                    return e;
                 }
             });
 
@@ -162,6 +176,10 @@ window.init = async function startGame(url) {
                     const split = d.split(sep);
             
                     for (const section of split) {
+                        if (section.match(/^[\-\d\.]+$/)) {
+                            arr.push(parseFloat(section));
+                            continue;
+                        }
                         arr.push(layer(section, l + 1))
                     }
                     
@@ -177,7 +195,7 @@ window.init = async function startGame(url) {
                 }
                 const data = decompress(event.data.toString().replace('update[', ''));
 
-                console.log(data);
+                // console.log(data);
 
                 if (data.id < currentId) {
                     return;
@@ -197,21 +215,21 @@ window.init = async function startGame(url) {
                                 const delta = Math.abs(player[key] - playerInstance[key]);
 
                                 if (key === 'x' && delta > 0) {
-                                    playerInstance.x = player.x;
+                                    //playerInstance.x = player.x;
                                     playerInstance.savedX = player.x;
                                     playerInstance.savedVelocity = player.velocity;
                                     playerInstance.savedAngularVelocity = player.angularVelocity;
                                 }
 
                                 if (key === 'y' && delta > 0) {
-                                    playerInstance.y = player.y;
+                                    //playerInstance.y = player.y;
                                     playerInstance.savedY = player.y;
                                     playerInstance.savedVelocity = player.velocity;
                                     playerInstance.savedAngularVelocity = player.angularVelocity;
                                 }
 
                                 if (key === 'angle' && delta > (Math.PI / 90, 0)) {
-                                    playerInstance.angle = player.angle;
+                                    //playerInstance.angle = player.angle;
                                     playerInstance.savedAngle = player.angle;
                                     playerInstance.savedVelocity = player.velocity;
                                     playerInstance.savedAngularVelocity = player.angularVelocity;
@@ -233,19 +251,19 @@ window.init = async function startGame(url) {
                                 const delta = Math.abs(head[key] - headInstance[key]);
 
                                 if (key === 'y' && delta > 0) {
-                                    headInstance.y = head.y;
+                                    //headInstance.y = head.y;
                                     headInstance.savedY = head.y;
                                     headInstance.savedVelocity = head.velocity;
                                 }
 
                                 if (key === 'angle' && delta > (Math.PI / 180, 0)) {
-                                    headInstance.angle = head.angle;
+                                    //headInstance.angle = head.angle;
                                     headInstance.savedAngle = head.angle;
                                     headInstance.savedVelocity = head.velocity;
                                 }
 
                                 if (key === 'x' && delta > 0) {
-                                    headInstance.x = head.x;
+                                    //headInstance.x = head.x;
                                     headInstance.savedX = head.x;
                                     headInstance.savedVelocity = head.velocity;
                                 }
@@ -266,19 +284,19 @@ window.init = async function startGame(url) {
                                 const delta = Math.abs(arm[key] - armInstance[key]);
 
                                 if (key === 'x' && delta > 0) {
-                                    armInstance.x = arm.x;
+                                    //armInstance.x = arm.x;
                                     armInstance.savedX = arm.x;
                                     armInstance.savedVelocity = arm.velocity;
                                 }
 
                                 if (key === 'y' && delta > 0) {
-                                    armInstance.y = arm.y;
+                                    //armInstance.y = arm.y;
                                     armInstance.savedY = arm.y;
                                     armInstance.savedVelocity = arm.velocity;
                                 }
 
                                 if (key === 'angle' && delta > (Math.PI / 180, 0)) {
-                                    armInstance.angle = arm.angle;
+                                    //armInstance.angle = arm.angle;
                                     armInstance.savedAngle = arm.angle;
                                     armInstance.savedVelocity = arm.velocity;
                                 }
@@ -290,8 +308,8 @@ window.init = async function startGame(url) {
                         }
             
                         const ballInstance = window.ball;
-                        ballInstance.x = data.ball.x;
-                        ballInstance.y = data.ball.y;
+                        //ballInstance.x = data.ball.x;
+                        //ballInstance.y = data.ball.y;
                         ballInstance.savedX = data.ball.x;
                         ballInstance.savedY = data.ball.y;
                         ballInstance.savedVelocity = data.ball.velocity;

@@ -314,7 +314,7 @@ async function createLobby(id: string) {
                 ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
             })));
             console.clear();
-        }, 1000 / 150);
+        }, 1000 / 96);
 
         return true;
     });
@@ -365,7 +365,7 @@ function compress(data) {
         const sep = separators[layer];
     
         return Object.keys(data).map((key, i, obj) => {
-            if (!isNaN(parseFloat(data[key]))) data[key] = parseFloat(data[key]);
+            if (!isNaN(parseFloat(data[key])) && !Array.isArray(data[key])) data[key] = parseFloat(data[key]);
     
             if (Array.isArray(data[key])) {
                 return `${i === 0 ? '' : sep}${key}[${data[key].map(entry => `${iterCondense(entry, layer + 2)}`).join(separators[layer + 1])}]${i === obj.length - 1 ? '' : sep}`;
