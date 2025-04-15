@@ -21,7 +21,26 @@ window.init = async function startGame(url) {
 
     setupBackup();
 
+    const keys = {
+        w: false,
+        up: false
+    }
+
     window.addEventListener('basket-key', (event) => {
+        if (event.detail.type === 'keydown') {
+            if (event.detail.key === 'w') {
+                keys.w = true;
+            } else if (event.detail.key === 'ArrowUp') {
+                keys.up = true;
+            }
+        } else if (event.detail.type === 'keyup') {
+            if (event.detail.key === 'w') {
+                keys.w = false;
+            } else if (event.detail.key === 'ArrowUp') {
+                keys.up = false;
+            }
+        }
+
         ws.send(JSON.stringify({ type: 'key', event: event.detail.type, key: event.detail.key }));
     });
 
@@ -65,6 +84,12 @@ window.init = async function startGame(url) {
                 });*/
             }, 1000);
             const tick = () => {
+                const gv = document.querySelector('iframe').contentWindow.savedGlobalVars || {
+                    p1Score: 0,
+                    p2Score: 0,
+                    goal: 0
+                };
+
                 for (const head of document.querySelector('iframe').contentWindow.heads) {
                     //head.x = head.savedX;
                     //head.y = head.savedY;
@@ -97,6 +122,37 @@ window.init = async function startGame(url) {
                     arm.x = arm.savedX;
                     arm.y = arm.savedY;
                     arm.angle = arm.savedAngle;
+
+                    const index = document.querySelector('iframe').contentWindow.arms.indexOf(arm);
+
+                    switch(index) {
+                        case 0:
+                        case 1: {
+                            if (keys.up && arm.angleDegrees < 178) {
+                                arm.savedAngle += ((Math.PI * (190 / 180)) / 0.35) / 60;
+                            }
+                            if (!keys.up && arm.angleDegrees > 2 && arm.angleDegrees < 180) {
+                                arm.savedAngle -= ((Math.PI * (190 / 180)) / 0.35) / 60;
+                                if (arm.savedAngle < 0) {
+                                    arm.savedAngle = 0;
+                                }
+                            }
+                            break;
+                        };
+                        case 2:
+                        case 3: {
+                            if (keys.w && arm.angleDegrees > 182) {
+                                arm.savedAngle -= ((Math.PI * (190 / 180)) / 0.35) / 60;
+                            }
+                            if (!keys.w && arm.angleDegrees < 358 && arm.angleDegrees > 182) {
+                                arm.savedAngle += ((Math.PI * (190 / 180)) / 0.35) / 60;
+                                if (arm.savedAngle > Math.PI * 2) {
+                                    arm.savedAngle = Math.PI * 2;
+                                }
+                            }
+                            break;
+                        }
+                    }
                 }
 
                 const ball = document.querySelector('iframe').contentWindow.ball;
@@ -104,10 +160,18 @@ window.init = async function startGame(url) {
                 ball.x = ball.savedX;
                 ball.y = ball.savedY;
 
-                if (Array.isArray(ball.savedVelocity)) {
+                if (Array.isArray(ball.savedVelocity) && !gv.goal) {
                     ball.savedX += (ball.savedVelocity[0]) / 60;
                     ball.savedY += (ball.savedVelocity[1]) / 60;
-                    ball.savedVelocity[1] += 4;
+                    if (ball.savedVelocity[1] > 100) {
+                        ball.savedVelocity[1] = 100;
+                    }
+                    if (ball.y < 136 || ball.savedVelocity[1] < 0) {
+                        ball.savedVelocity[1] += 4;
+                    }
+                    if (ball.savedVelocity[1] > 0 && ball.y > 136) {
+                        ball.savedVelocity[1] = 0;
+                    }
                 }
             }
 
@@ -205,6 +269,13 @@ window.init = async function startGame(url) {
 
                 if (data.event === 'update') {
                     (function(window) {
+                        if (data.globalVars) {
+                            window.savedGlobalVars = data.globalVars || {
+                                p1Score: 0,
+                                p2Score: 0,
+                                goal: 0
+                            };
+                        }
                         for (let [index, player] of enumerate(data.players)) {
                             const playerInstance = window.players.find((p, i) => index === i);
                             if (!playerInstance) {

@@ -49,6 +49,12 @@
 
             cw.dispatchEvent(new PointerEvent('pointerdown', {clientX: cw.innerWidth/2, clientY: cw.innerHeight/2}));
 
+            cw.savedGlobalVars = {
+                p1Score: 0,
+                p2Score: 0,
+                goal: 0
+            };
+
             Object.defineProperties(cw, {
                 "ball": {
                     get: () => cw.c3_runtimeInterface._localRuntime._iRuntime.objects.balls.getAllInstances()[0],

@@ -143,12 +143,23 @@ async function createLobby(id: string) {
             }
         });
 
+        win.score = {
+            p1: 0,
+            p2: 0
+        }
+
         win.soundsPlayed = [];
         win.AudioDOMHandler.prototype._Play = new Proxy(win.AudioDOMHandler.prototype._Play, {
             apply: (target, thisArg, argumentsList) => {
                 win.soundsPlayed.push(argumentsList[0].originalUrl);
 
                 if (argumentsList[0].originalUrl === "file") {
+                    if (win.globalVars.p1Score === 1) {
+                        win.score.p1 ++;
+                    } else if (win.globalVars.p2Score === 1) {
+                        win.score.p2 ++;
+                    }
+
                     win.globalVars.p1Score = 0;
                     win.globalVars.p2Score = 0;
                 }
@@ -312,6 +323,11 @@ async function createLobby(id: string) {
                 heads: win.heads.map((head) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars, velocity: head.behaviors.Physics.getVelocity() })),
                 arms: win.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars, velocity: [0, 0] })),
                 ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
+                globalVars: {
+                    p1Score: win.score.p1,
+                    p2Score: win.score.p2,
+                    goal: win.globalVars.goal,
+                },
             })));
             console.clear();
         }, 1000 / 96);
