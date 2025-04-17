@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
 import { Button } from "./ui/button"
-import { ArrowBigUp } from "lucide-react"
+import { ArrowBigUp, Fullscreen } from "lucide-react"
 
 interface GameContainerProps {
   roomId: string
@@ -21,6 +21,10 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
   const [upArrow, setUpArrow] = useState(false);
   const [ping, setPing] = useState(0);
   const [pingStatus, setPingStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
+  let res: any = () => {};
+  const gameLoaded = new Promise((resolve) => {
+    res = resolve;
+  });
 
   useEffect(() => {
     // Simulate game loading
@@ -39,15 +43,24 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
         if (event.data.type === 'update') {
           //setMessage(event.data.data);
         }
-        if (event.data.type === 'ready') {
-          setMessage("Waiting on server...");
+        if (event.data.type === 'ping') {
+          if (pingStatus !== "connected") {
+            setPingStatus("connected");
+          }
+          return setPing(event.data.data);
         }
+
+        if (event.data.type === 'ready') {
+          res();
+          return setMessage("Waiting on server...");
+        }
+
+        await gameLoaded;
+
         if (event.data.type === 'loaded') {
+          setReady(false);
           setMessage("Waiting for start...")
           setPingStatus("connected");
-        }
-        if (event.data.type === 'ping') {
-          setPing(event.data.data);
         }
         if (event.data.type === 'start') {
           setMessage("");
@@ -88,6 +101,14 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
     }
   }, [isLoading, ws])
 
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.getElementById('gamecont')!.requestFullscreen();
+    }
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -101,22 +122,21 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          {players.map((player, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>{player}</span>
-            </div>
-          ))}
-        </div>
-        <PingIndicator status={pingStatus} ping={ping} />
-      </div>
-
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden" id="gamecont">
         <CardHeader className="bg-muted py-4">
           <CardTitle className="flex items-center justify-between">
             <span>Game Started</span>
+            <div className="flex flex-row justify-start items-center font-normal text-sm ml-16 mr-auto gap-8">
+              <div className="flex items-center space-x-4">
+                {players.map((player, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span>{player}</span>
+                  </div>
+                ))}
+              </div>
+              <PingIndicator status={pingStatus} ping={ping} />
+            </div>
             <div className="flex flex-row items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className={"border border-input p-2 rounded-sm h-full transition duration-100 ease-in-out" + (w ? " bg-primary" : "")}>
@@ -127,6 +147,9 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
                 </div>
               </div>
               <span className="text-sm font-normal">Room: {roomId}</span>
+              <div onClick={toggleFullscreen} className={"border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out hover:bg-primary/50"}>
+                <Fullscreen className="text-white" />
+              </div>
             </div>
           </CardTitle>
         </CardHeader>

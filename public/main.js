@@ -1,11 +1,7 @@
-window.init = async function startGame(url) {
-    const ws = new WebSocket(`${location.protocol.replace('http', 'ws')}//${location.host}${url}`);
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
-    function setupBackup() {
-        ws.onclose = function() {
-            location.reload();
-        }
-    }
+window.init = async function startGame(url) {
+    const ws = new ReconnectingWebSocket(`${location.protocol.replace('http', 'ws')}//${location.host}${url}`);
 
     const ping = async (ws) => {
         return new Promise((resolve, reject) => {
@@ -18,8 +14,6 @@ window.init = async function startGame(url) {
             }
         });
     }
-
-    setupBackup();
 
     const keys = {
         w: false,
@@ -47,12 +41,6 @@ window.init = async function startGame(url) {
     window.ready = function() {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'ready' }));
-
-            setInterval(() => {
-                ping(ws).then((ping) => {
-                    window.postMessage({ type: 'ping', data: ping }, '*');
-                });
-            }, 1000);
         }
     }
 
@@ -62,6 +50,23 @@ window.init = async function startGame(url) {
     }
 
     let currentId = 0;
+    let pingInterval = null;
+
+    ws.addEventListener('open', () => {
+        console.log('WebSocket connection established');
+
+        if (pingInterval) {
+            clearInterval(pingInterval);
+        }
+
+        pingInterval = setInterval(() => {
+            ping(ws).then((ping) => {
+                window.postMessage({ type: 'ping', data: ping }, '*');
+            });
+        }, 1000);
+
+        currentId = 0;
+    });
 
     ws.addEventListener('message', (event) => {
         try {
@@ -84,19 +89,26 @@ window.init = async function startGame(url) {
                 });*/
             }, 1000);
             const tick = () => {
-                const gv = document.querySelector('iframe').contentWindow.savedGlobalVars || {
+                const cw = document.querySelector('iframe').contentWindow;
+
+                const gv = cw.savedGlobalVars || {
                     p1Score: 0,
                     p2Score: 0,
                     goal: 0
                 };
 
-                for (const head of document.querySelector('iframe').contentWindow.heads) {
+                try {
+                    cw.c3_runtimeInterface._localRuntime._layoutManager._layoutsByName.get('game')._layersByName.get('ui')._instances[2]._sdkInst._SetText(String(gv.p2Score));
+                    cw.c3_runtimeInterface._localRuntime._layoutManager._layoutsByName.get('game')._layersByName.get('ui')._instances[3]._sdkInst._SetText(String(gv.p1Score));
+                } catch {}
+
+                for (const head of cw.heads) {
                     //head.x = head.savedX;
                     //head.y = head.savedY;
                     //head.angle = head.savedAngle;
                 }
 
-                for (const player of document.querySelector('iframe').contentWindow.players) {
+                for (const player of cw.players) {
                     player.x = player.savedX;
                     player.y = player.savedY;
                     player.angle = player.savedAngle;
@@ -118,12 +130,12 @@ window.init = async function startGame(url) {
                     }
                 }
 
-                for (const arm of document.querySelector('iframe').contentWindow.arms) {
+                for (const arm of cw.arms) {
                     arm.x = arm.savedX;
                     arm.y = arm.savedY;
                     arm.angle = arm.savedAngle;
 
-                    const index = document.querySelector('iframe').contentWindow.arms.indexOf(arm);
+                    const index = cw.arms.indexOf(arm);
 
                     switch(index) {
                         case 0:
@@ -155,7 +167,7 @@ window.init = async function startGame(url) {
                     }
                 }
 
-                const ball = document.querySelector('iframe').contentWindow.ball;
+                const ball = cw.ball;
 
                 ball.x = ball.savedX;
                 ball.y = ball.savedY;
@@ -403,6 +415,123 @@ function enumerate(iterable) {
         i++;
     }
     return e;
+}
+
+document.getElementById('game').onload = () => {
+    const cw = document.getElementById('game').contentWindow;
+    cw.console.log = new Proxy(cw.console.log, {
+        apply: function(target, thisArg, argumentsList) {
+            if (argumentsList[0] === 'start game called') {
+                setTimeout(() => start(), 500);
+            }
+
+            return Reflect.apply(target, thisArg, argumentsList);
+        }
+    });
+}
+
+function start() {
+    const cw = document.getElementById('game').contentWindow;
+
+    cw.c3_runtimeInterface._localRuntime.SetTimeScale(10000000000);
+
+    cw.dispatchEvent(new PointerEvent('pointerdown', {clientX: cw.innerWidth/2, clientY: cw.innerHeight/2}));
+
+    cw.savedGlobalVars = {
+        p1Score: 0,
+        p2Score: 0,
+        goal: 0
+    };
+
+    Object.defineProperties(cw, {
+        "ball": {
+            get: () => cw.c3_runtimeInterface._localRuntime._iRuntime.objects.balls.getAllInstances()[0],
+        },
+        "players": {
+            get: () => [
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.body.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.body2.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.body3.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.body4.getAllInstances()[0],
+            ],
+        },
+        "heads": {
+            get: () => [
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.head.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.head2.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.head3.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.head4.getAllInstances()[0],
+            ],
+        },
+        "arms": {
+            get: () => [
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.arm.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.arm2.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.arm3.getAllInstances()[0],
+                cw.c3_runtimeInterface._localRuntime._iRuntime.objects.arm4.getAllInstances()[0],
+            ],
+        },
+        "globalVars": {
+            get: () => cw.c3_runtimeInterface._localRuntime._iRuntime.globalVars,
+        }
+    });
+
+    ['keydown', 'keyup'].forEach(name => {
+        cw.document.addEventListener(name, (event) => {
+            cw.console.log(`Event: ${name}, Key: ${event.key}`);
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            window.dispatchEvent(new CustomEvent('basket-key', { detail: {type: name, key: event.key} }));
+        });
+    });
+
+    let startGame = false;
+
+    cw.AudioDOMHandler.prototype._Play = new Proxy(cw.AudioDOMHandler.prototype._Play, {
+    apply: (target, thisArg, argumentsList) => {
+        console.log(argumentsList[0].originalUrl)
+
+        if (argumentsList[0].originalUrl === "file") {
+            cw.globalVars.p1Score = 0;
+            cw.globalVars.p2Score = 0;
+        }
+
+        if (argumentsList[0].originalUrl === "start") {
+            setTimeout(async () => {
+                cw.dispatchEvent(new PointerEvent('pointerup'));
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                cw.dispatchEvent(new PointerEvent('pointerdown', {clientX: 0.6 * cw.innerWidth/*cw.innerWidth * 0.6*/, clientY: cw.innerHeight * 0.57}));
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                cw.dispatchEvent(new PointerEvent('pointerup'));
+            }, 1000);
+        }
+
+        if (argumentsList[0].originalUrl === "refsoc") {
+            if (!startGame) {
+                startGame = true;
+                setTimeout(async () => {
+                    cw.dispatchEvent(new PointerEvent('pointerdown', {clientX: 0.6 * cw.innerWidth/*cw.innerWidth * 0.6*/, clientY: cw.innerHeight * 0.57}));
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                    cw.dispatchEvent(new PointerEvent('pointerup'));
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                    cw.dispatchEvent(new PointerEvent('pointerdown', {clientX: 0.4 * cw.innerWidth/*cw.innerWidth * 0.6*/, clientY: cw.innerHeight * 0.57}));
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                    cw.dispatchEvent(new PointerEvent('pointerup'));
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+
+                    cw.c3_runtimeInterface._localRuntime.SetSuspended(true);
+
+                    window.postMessage({type: "ready"}, '*');
+                }, 250);
+            }
+        }
+
+        return false;
+
+        return target.apply(thisArg, argumentsList);
+    }});
 }
 
 setTimeout(() => {

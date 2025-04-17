@@ -68,7 +68,7 @@ async function createLobby(id: string) {
                 if (args[0] === 'start game called') {
                     setTimeout(() => {
                         resolve();
-                    }, 3000);
+                    }, 1000);
                 }
                 originalLog(...args);
             };
@@ -110,6 +110,7 @@ async function createLobby(id: string) {
 
     await browser.page.evaluate(() => {
         let win: any = window;
+        win.c3_runtimeInterface._localRuntime.SetTimeScale(10000000000);
         Object.defineProperties(win, {
             "ball": {
                 get: () => win.c3_runtimeInterface._localRuntime._iRuntime.objects.balls.getAllInstances()[0],
@@ -208,15 +209,27 @@ async function createLobby(id: string) {
 
     await pause();
 
+    const _push = sockets.push;
+
     [...sockets].forEach(client => {
         if (client.lobbyId === id) {
             client.send('loaded');
         }
     });
 
+    sockets.push = new Proxy(_push, {
+        apply: (target, thisArg, argumentsList) => {
+            const result = target.apply(thisArg, argumentsList);
+            if (argumentsList[0].lobbyId === id)
+                argumentsList[0].send('loaded');
+            return result;
+        }
+    });
 
     await new Promise<void>((resolve) => {
         let int = setInterval(() => {
+            let clients = [...sockets].filter(client => client.lobbyId === id);
+            
             if (clients.filter(cli => cli.ready).length === 2) {
                 console.log('Both clients are ready, starting game');
                 resolve();
@@ -265,7 +278,7 @@ async function createLobby(id: string) {
         }
     }
 
-    sockets.push = new Proxy(sockets.push, {
+    sockets.push = new Proxy(_push, {
         apply: (target, thisArg, argumentsList) => {
             const result = target.apply(thisArg, argumentsList);
             if (argumentsList[0].lobbyId === id)

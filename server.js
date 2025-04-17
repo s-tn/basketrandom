@@ -3,6 +3,20 @@ import { parse } from 'node:url';
 import next from 'next';
 import { setHttpServer, setWebSocketServer } from 'next-ws/server';
 import { WebSocketServer } from 'ws';
+import * as esbuild from 'esbuild';
+
+esbuild.context({
+  entryPoints: ['./public/main.js'],
+  bundle: true,
+  outfile: './public/game.bundle.js',
+  minify: true,
+  sourcemap: true
+}).then((context) => {
+  console.log('Bundling game...');
+  return context.watch().then(() => {
+    console.log('Game bundle ready.');
+  });
+});
 
 import './game/index.js'
 
