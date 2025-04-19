@@ -55,6 +55,11 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
           return setMessage("Waiting on server...");
         }
 
+        if (event.data.type === 'error') {
+          setPingStatus("disconnected");
+          return setMessage(event.data.data);
+        }
+
         await gameLoaded;
 
         if (event.data.type === 'loaded') {
@@ -94,9 +99,6 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
             setW(true);
           }
         }
-      });
-      cw.addEventListener("ready", (event: MessageEvent) => {
-        cw.init(ws);
       });
     }
   }, [isLoading, ws])
@@ -190,7 +192,7 @@ export function GameContainer({ roomId, players, ws }: GameContainerProps) {
           }
           {/* Game iframe */}
           <div className="flex items-center justify-center bg-black aspect-video">
-            <iframe src="/game.html" className="w-full h-full" title="Game" id="game-frame"></iframe>
+            <iframe src={`/game.html#${btoa(ws)}`} className="w-full h-full" title="Game" id="game-frame"></iframe>
           </div>
         </CardContent>
       </Card>

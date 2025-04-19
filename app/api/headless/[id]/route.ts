@@ -18,13 +18,15 @@ export async function SOCKET(
     request: import("http").IncomingMessage,
     server: import("ws").WebSocketServer
   ) {
-    const lobbyId: string = request.url!.split('/')[3];
+    const lobbyId: string = request.url!.split('/')[3].split('?')[0];
+    const streamType: string = request.url!.split('?')[1];
     (client as any).lobbyId = lobbyId;
+    (client as any).type = streamType;
     (client as any).id = randomUUID();
     (client as any).ready = false;
     sockets.push(client);
 
-    console.log(`Client connected to lobby: ${lobbyId}`);
+    console.log(`Client connected to lobby: ${lobbyId} with goal: ${streamType}`);
 
     client.addEventListener('message', (message) => {
         try {
@@ -38,17 +40,19 @@ export async function SOCKET(
         }
     });
 
-    if (!lobbies[lobbyId]) {
-        lobbies[lobbyId] = [];
-        createLobby(lobbyId);
+    if (streamType === 'stream') {
+        if (!lobbies[lobbyId]) {
+            lobbies[lobbyId] = [];
+            createLobby(lobbyId);
+        }
+        lobbies[lobbyId].push(ws);
     }
-    lobbies[lobbyId].push(ws);
 }
 
 async function createLobby(id: string) {
     const twoPlayers = new Promise<any[]>((resolve) => {
         const interval = setInterval(() => {
-            const clients = [...sockets].filter(client => client.lobbyId === id);
+            const clients = [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
             if (clients.length === 2) {
                 clearInterval(interval);
                 resolve(clients);
@@ -56,7 +60,9 @@ async function createLobby(id: string) {
         }, 500);
     });
 
-    const clients: any[] = await twoPlayers;
+    await twoPlayers;
+
+    const clients: () => any[] = () => [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
 
     console.log('Starting game in lobby:', id);
     const browser = await run();
@@ -76,7 +82,7 @@ async function createLobby(id: string) {
     });
     console.log('Game loaded in lobby:', id);
 
-    clients.forEach((cli) => {
+    clients().forEach((cli) => {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
     });
 
@@ -182,7 +188,7 @@ async function createLobby(id: string) {
                 if (win.soundsPlayed.includes('menu')) {
                     setTimeout(() => {
                         resolve();
-                    }, 1500);
+                    }, 1000);
                 }
             }, 500);
         });
@@ -193,7 +199,7 @@ async function createLobby(id: string) {
     await new Promise<void>((resolve) => {
         setTimeout(() => {
             resolve();
-        }, 2000);
+        }, 1250);
     });
 
     // await new Promise((resolve) => {
@@ -211,16 +217,14 @@ async function createLobby(id: string) {
 
     const _push = sockets.push;
 
-    [...sockets].forEach(client => {
-        if (client.lobbyId === id) {
-            client.send('loaded');
-        }
+    clients().forEach(client => {
+        client.send('loaded');
     });
 
     sockets.push = new Proxy(_push, {
         apply: (target, thisArg, argumentsList) => {
             const result = target.apply(thisArg, argumentsList);
-            if (argumentsList[0].lobbyId === id)
+            if (argumentsList[0].lobbyId === id && argumentsList[0].type === 'stream')
                 argumentsList[0].send('loaded');
             return result;
         }
@@ -228,9 +232,7 @@ async function createLobby(id: string) {
 
     await new Promise<void>((resolve) => {
         let int = setInterval(() => {
-            let clients = [...sockets].filter(client => client.lobbyId === id);
-            
-            if (clients.filter(cli => cli.ready).length === 2) {
+            if (clients().filter(cli => cli.ready).length >= 2) {
                 console.log('Both clients are ready, starting game');
                 resolve();
                 clearInterval(int);
@@ -252,29 +254,33 @@ async function createLobby(id: string) {
 
     let gamers: any[] = [];
 
-    function subscribe(client) {
+    async function subscribe(client) {
         if (client.lobbyId === id) {
-            client.send('start');
+            switch(client.type) {
+                case 'events':
+                    console.log('event', client.id)
+                    client.on('message', async (message: any) => {
+                        if (message.toString() === 'ping') return;
+        
+                        const data = JSON.parse(message.toString());
+        
+                        if (data.type === 'key') {
+                            if (data.event === 'keydown') {
+                                await browser.page.keyboard.down(data.key);
+                            }
+        
+                            if (data.event === 'keyup') {
+                                await browser.page.keyboard.up(data.key);
+                            }
+                        }
+                    });
+                    break;
+                case 'stream':
+                    client.send('start');
 
-            client.on('message', async (message: any) => {
-                if (message.toString() === 'ping') return;
-
-                const data = JSON.parse(message.toString());
-
-                console.log(data);
-
-                if (data.type === 'key') {
-                    if (data.event === 'keydown') {
-                        await browser.page.keyboard.down(data.key);
-                    }
-
-                    if (data.event === 'keyup') {
-                        await browser.page.keyboard.up(data.key);
-                    }
-                }
-            });
-
-            gamers.push(client);
+                    gamers.push(client);
+                    break;
+            }
         }
     }
 

@@ -6,7 +6,7 @@ import { WebSocketServer } from 'ws';
 import * as esbuild from 'esbuild';
 
 esbuild.context({
-  entryPoints: ['./public/main.js'],
+  entryPoints: ['./public/client/main.js'],
   bundle: true,
   outfile: './public/game.bundle.js',
   minify: true,
@@ -44,10 +44,10 @@ app.prepare().then(() => {
     .listen(port, () => {
       console.log(` ▲ Ready on http://${hostname}:${port}`);
 
-      setInterval(() => {
+      /*setInterval(() => {
         fetch('http://localhost:9000/api/lobby/empty', {
           method: 'POST'
         });
-      }, 10000);
+      }, 10000);*/
     });
 });
