@@ -36,3 +36,5 @@ yarn-error.log*
 next-env.d.ts
 
 app/api/headless/\[id\]/game/data/
+
+app/api/headless/%5Bid%5D/game/data/
