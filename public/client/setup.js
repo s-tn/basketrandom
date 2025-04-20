@@ -1,5 +1,7 @@
+import { anticheat } from "./anticheat";
+
 export function setup(window) {
-    return new Promise(resolve => {
+    return new Promise(async (resolve) => {
         window.c3_runtimeInterface._localRuntime.SetTimeScale(10000000000);
 
         window.dispatchEvent(new PointerEvent('pointerdown', {clientX: window.innerWidth/2, clientY: window.innerHeight/2}));

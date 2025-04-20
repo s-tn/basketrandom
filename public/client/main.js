@@ -3,9 +3,11 @@ import { getSockets } from './sockets';
 import { setup } from './setup';
 import { compress, decompress } from './compression';
 import { tick } from './tick';
+import { anticheat } from './anticheat';
 
 document.getElementById('game').onload = () => {
     const cw = document.getElementById('game').contentWindow;
+    anticheat(cw);
     cw.console.log = new Proxy(cw.console.log, {
         apply: function(target, thisArg, argumentsList) {
             if (argumentsList[0] === 'start game called') {
@@ -88,6 +90,8 @@ async function start() {
         }
     
         comms.out.send(JSON.stringify({ type: 'key', event: event.detail.type, key: event.detail.key }));
+
+        window.dispatchEvent(new event.constructor(event.type, event));
     });
     
     let currentId = 0;
@@ -141,6 +145,15 @@ async function start() {
                     document.querySelector('iframe').focus();
                     (function(window) {
                         if (data.globalVars) {
+                            if (window.savedGlobalVars) {
+                                if (window.savedGlobalVars.p1Score !== data.globalVars.p1Score) {
+                                    setTimeout(() => window.showBasket('blue'), 10);
+                                    
+                                }
+                                if (window.savedGlobalVars.p2Score !== data.globalVars.p2Score) {
+                                    setTimeout(() => window.showBasket('red'), 10);
+                                }
+                            }
                             window.savedGlobalVars = data.globalVars || {
                                 p1Score: 0,
                                 p2Score: 0,
@@ -192,14 +205,14 @@ async function start() {
                             ['x', 'y', 'angle'].forEach((key) => {
                                 const delta = Math.abs(head[key] - headInstance[key]);
     
-                                if (key === 'y' && delta > 0) {
-                                    //headInstance.y = head.y;
+                                if (key === 'y' && delta > 1) {
+                                    headInstance.y = head.y;
                                     headInstance.savedY = head.y;
                                     headInstance.savedVelocity = head.velocity;
                                 }
     
                                 if (key === 'angle' && delta > (Math.PI / 180, 0)) {
-                                    //headInstance.angle = head.angle;
+                                    headInstance.angle = head.angle;
                                     headInstance.savedAngle = head.angle;
                                     headInstance.savedVelocity = head.velocity;
                                 }
@@ -210,6 +223,9 @@ async function start() {
                                     headInstance.savedVelocity = head.velocity;
                                 }
                             });
+
+                            //headInstance.behaviors.Physics.setVelocity(0, 0);
+                            headInstance.behaviors.Physics.angularVelocity = 0;
     
                             for (let [key, value] of Object.entries(head.instVars)) {
                                 headInstance.instVars[key] = value;
