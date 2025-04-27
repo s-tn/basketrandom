@@ -5,6 +5,8 @@ import { setHttpServer, setWebSocketServer } from 'next-ws/server';
 import { WebSocketServer } from 'ws';
 import * as esbuild from 'esbuild';
 
+import './game/headless.js';
+
 esbuild.context({
   entryPoints: ['./public/client/main.js'],
   bundle: true,

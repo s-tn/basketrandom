@@ -1,7 +1,7 @@
-import prisma from "@/lib/prisma";
+//import prisma from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import ws from "ws";
-import run from './game/run.js';
+import { resolve } from 'path';
 
 export function GET() {
     const headers = new Headers();
@@ -12,6 +12,8 @@ export function GET() {
 
 const lobbies: Record<string, Array<any>> = {};
 const sockets: any[] = [];
+
+let browserPromise: Promise<any> | null = null;
 
 export async function SOCKET(
     client: import("ws").WebSocket,
@@ -59,6 +61,14 @@ async function createLobby(id: string) {
             }
         }, 500);
     });
+
+    if (!browserPromise) {
+        browserPromise = (await import('puppeteer')).launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote', '--disable-gl-drawing-for-tests'],
+            userDataDir: resolve(__dirname, '../../../../../', 'data')
+        });
+    }
 
     await twoPlayers;
 
@@ -438,46 +448,71 @@ function compress(data) {
     return compressNames(iterCondense(data));
 }
 
-/*
-export async function SOCKET(
-    client: import("ws").WebSocket,
-    request: import("http").IncomingMessage,
-    server: import("ws").WebSocketServer
-  ) {
-    const id = request.url?.match(/^\/api\/headless\/(.*)/)?.[1];
+const __dirname = (import.meta.url ?
+    import.meta.url.replace(/^file:\/\//, '') :
+    globalThis.__dirname || 
+    (function() {
+        try {
+            return decodeURIComponent(process.execPath);
+        } catch(e) {
+            return '';
+        }
+    })()).replace('/game/run.js', '/game/');
 
-    if (!id) {
-      return client.close();
-    }
+const run = async () => {
+    const browser = await browserPromise;
+    const page = await browser.newPage();
+    page.setViewport({ width: 640, height: 360 });
+    await page.goto('http://localhost:9001/');
 
-    const proxySocket = new WebSocket(`ws://localhost:3001/headless/${id}`);
+    return { browser, page };
+}
 
-    client.on('open', () => {
-        console.log('Client socket opened');
-    });
+export default {
+    GET,
+    SOCKET,
+}
 
-    proxySocket.addEventListener('open', () => {
-      console.log('Proxy socket opened');
-    });
+// /*
+// export async function SOCKET(
+//     client: import("ws").WebSocket,
+//     request: import("http").IncomingMessage,
+//     server: import("ws").WebSocketServer
+//   ) {
+//     const id = request.url?.match(/^\/api\/headless\/(.*)/)?.[1];
 
-    proxySocket.addEventListener('message', (event) => {
-      client.send(event.data);
-    });
+//     if (!id) {
+//       return client.close();
+//     }
 
-    proxySocket.addEventListener('close', () => {
-      client.close();
-    });
+//     const proxySocket = new WebSocket(`ws://localhost:3001/headless/${id}`);
 
-    proxySocket.addEventListener('error', (error) => {
-      client.close();
-    });
+//     client.on('open', () => {
+//         console.log('Client socket opened');
+//     });
+
+//     proxySocket.addEventListener('open', () => {
+//       console.log('Proxy socket opened');
+//     });
+
+//     proxySocket.addEventListener('message', (event) => {
+//       client.send(event.data);
+//     });
+
+//     proxySocket.addEventListener('close', () => {
+//       client.close();
+//     });
+
+//     proxySocket.addEventListener('error', (error) => {
+//       client.close();
+//     });
 
 
-    client.on('message', (message: any) => {
-      proxySocket.send(message);
-    });
+//     client.on('message', (message: any) => {
+//       proxySocket.send(message);
+//     });
 
-    client.on('close', () => {
-      proxySocket.close();
-    });
-  }*/
+//     client.on('close', () => {
+//       proxySocket.close();
+//     });
+//   }*/
