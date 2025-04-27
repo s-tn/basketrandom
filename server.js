@@ -18,7 +18,7 @@ esbuild.context({
   });
 });
 
-import './game/index.js'
+//import './game/index.js'
 
 const httpServer = new Server();
 setHttpServer(httpServer);
