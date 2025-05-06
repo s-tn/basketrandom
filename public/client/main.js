@@ -197,6 +197,7 @@ async function start() {
                         }
             
                         for (let [index, head] of enumerate(data.heads)) {
+                            continue;
                             const headInstance = window.heads.find((p, i) => index === i);
                             if (!headInstance) {
                                 continue;

@@ -37,6 +37,7 @@ export function tick(window, keys) {
     }
 
     for (const head of window.heads) {
+        continue;
         head.x = head.savedX;
         head.y = head.savedY;
         //head.angle = head.savedAngle;

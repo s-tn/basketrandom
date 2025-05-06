@@ -1,3 +1,3 @@
-2025/04/27-14:40:47.056 35c64d Reusing MANIFEST /Users/jmbry/basketrandom/data/Default/Local Storage/leveldb/MANIFEST-000001
-2025/04/27-14:40:47.068 35c64d Recovering log #3
-2025/04/27-14:40:47.068 35c64d Reusing old log /Users/jmbry/basketrandom/data/Default/Local Storage/leveldb/000003.log 
+2025/05/06-08:25:15.797 33cb70 Reusing MANIFEST /Users/jmbry/basketrandom/data/Default/Local Storage/leveldb/MANIFEST-000001
+2025/05/06-08:25:15.811 33cb70 Recovering log #3
+2025/05/06-08:25:15.812 33cb70 Reusing old log /Users/jmbry/basketrandom/data/Default/Local Storage/leveldb/000003.log 
