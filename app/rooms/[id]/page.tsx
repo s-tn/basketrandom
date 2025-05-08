@@ -4,9 +4,18 @@ import { getRoomById } from "@/lib/rooms"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
-export default async function RoomPage({ params }: { params: { id: string } }) {
+export default async function RoomPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!id) {
+    return (
+      <div className="p-4">
+        <p className="text-red-500">Room ID is required.</p>
+        <Link href="/"><Button>Back to Rooms</Button></Link>
+      </div>
+    )
+  }
   try {
-    const room = await getRoomById(params.id)
+    const room = await getRoomById(id)
 
     if (!room) {
       return (
@@ -19,7 +28,7 @@ export default async function RoomPage({ params }: { params: { id: string } }) {
 
     return (
       <div className="container py-8">
-        <RoomDetail roomId={params.id} initialRoom={room} />
+        <RoomDetail roomId={id} initialRoom={room} />
       </div>
     )
   } catch (error) {

@@ -1,2 +1,3 @@
-2025/04/27-14:15:45.085 34fe7a Creating DB /Users/jmbry/basketrandom/data/Default/Extension Scripts since it was missing.
-2025/04/27-14:15:45.087 34fe7a Reusing MANIFEST /Users/jmbry/basketrandom/data/Default/Extension Scripts/MANIFEST-000001
+2025/05/07-22:06:14.273 49c5c8 Reusing MANIFEST /Users/jmbry/basketrandom/data/Default/Extension Scripts/MANIFEST-000001
+2025/05/07-22:06:14.273 49c5c8 Recovering log #3
+2025/05/07-22:06:14.273 49c5c8 Reusing old log /Users/jmbry/basketrandom/data/Default/Extension Scripts/000003.log 

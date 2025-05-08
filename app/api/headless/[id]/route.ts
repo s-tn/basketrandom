@@ -1,9 +1,38 @@
+import { find } from './../../../../node_modules/zod/lib/helpers/util.d';
 //import prisma from "@/lib/prisma";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import ws from "ws";
-import { resolve } from 'path';
+import { resolve } from 'node:path';
+import { launch, getStream, wss } from 'puppeteer-stream';
+import fs from 'fs';
+import { Client } from 'discord.js';
+import { joinVoiceChannel } from '@discordjs/voice';
+import { startStreaming } from 'twitch-stream-video';
 
-export function GET() {
+const client = new Client({
+    intents: [
+        "Guilds",
+        "GuildMessages",
+        "GuildMessageTyping",
+        "MessageContent",
+        "GuildMessageReactions",
+        "GuildVoiceStates",
+        "GuildPresences",
+        "GuildMembers",
+        "GuildEmojisAndStickers",
+        "GuildWebhooks",
+        "GuildIntegrations",
+        "GuildInvites",
+        "GuildScheduledEvents",
+        "GuildBans",
+    ]
+});
+
+client.once('ready', () => {
+    console.log('Discord bot is ready');
+});
+
+function GET() {
     const headers = new Headers();
     headers.set('Connection', 'Upgrade');
     headers.set('Upgrade', 'websocket');
@@ -15,7 +44,7 @@ const sockets: any[] = [];
 
 let browserPromise: Promise<any> | null = null;
 
-export async function SOCKET(
+ async function SOCKET(
     client: import("ws").WebSocket,
     request: import("http").IncomingMessage,
     server: import("ws").WebSocketServer
@@ -62,14 +91,6 @@ async function createLobby(id: string) {
         }, 500);
     });
 
-    if (!browserPromise) {
-        browserPromise = (await import('puppeteer')).launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote', '--disable-gl-drawing-for-tests'],
-            userDataDir: resolve(__dirname, '../../../../../', 'data')
-        });
-    }
-
     await twoPlayers;
 
     const clients: () => any[] = () => [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
@@ -77,6 +98,7 @@ async function createLobby(id: string) {
     console.log('Starting game in lobby:', id);
     const browser = await run();
     const page = browser.page;
+    const stream = browser.stream;
     await page.evaluate(() => {
         return new Promise<void>((resolve) => {
             const originalLog = console.log;
@@ -91,6 +113,20 @@ async function createLobby(id: string) {
         });
     });
     console.log('Game loaded in lobby:', id);
+
+    console.log('Stream created in lobby:', id);
+
+    //const writeStream = fs.createWriteStream(resolve(__dirname, '../../../../../', 'out', `${id}.webm`));
+    startStreaming(stream);
+    stream.on('error', (err) => {
+        console.error('Stream error:', err);
+    });
+    stream.on('close', () => {
+        console.log('Stream closed');   
+    });
+    stream.on('open', () => {
+        console.log('Stream opened');
+    });
 
     clients().forEach((cli) => {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
@@ -460,18 +496,43 @@ const __dirname = (import.meta.url ?
     })()).replace('/game/run.js', '/game/');
 
 const run = async () => {
+    if (!browserPromise) {
+        const platform = process.platform;
+        const isMac = platform === 'darwin';
+        const isLinux = platform === 'linux';
+        const isWindows = platform === 'win32';
+
+        const exec = process.env.CHROMIUM || (isMac ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' :
+            isLinux ? '/usr/bin/chromium' :
+            isWindows ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' :
+            'google-chrome-stable');
+
+        browserPromise = launch({
+                headless: "new",
+                executablePath: exec,
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                defaultViewport: {
+                    width: 1080,
+                    height: 720,
+                },
+            });
+    }
     const browser = await browserPromise;
     const page = await browser.newPage();
-    page.setViewport({ width: 640, height: 360 });
+    //page.setViewport({ width: 640, height: 360 });
     await page.goto('http://localhost:9001/');
+    const stream = await getStream(page, { audio: false, video: true, }).catch((err) => {
+        console.error('Error getting stream:', err);
+        throw err;
+    });
 
-    return { browser, page };
+    return { browser, page, stream };
 }
 
-export default {
-    GET,
-    SOCKET,
-}
+// client.login("MTM2OTg2Nzc0NzQ0OTYzODkxMw.GaNCDs.FugtHHuBq0G74NzZyEdSFtTf92cT9eDLWGAUfA");
+
+export { GET, SOCKET };
+
 
 // /*
 // export async function SOCKET(

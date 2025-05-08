@@ -4,20 +4,23 @@
   "private": true,
   "scripts": {
     "_dev": "concurrently \"next dev\" \"bun run game/index.js --hot --watch\"",
-    "dev": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
     "build": "next build",
-    "start": "next start",
+    "start": "node server.js",
     "lint": "next lint",
-    "prepare": "next-ws patch"
+    "prepare": "next-ws patch && rm -rf data"
   },
   "type": "module",
   "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "@flydotio/litestream": "^1.0.1",
     "@prisma/client": "^6.6.0",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "discord.js": "^14.19.3",
     "esbuild": "^0.25.3",
     "http-proxy-middleware": "^3.0.5",
     "lucide-react": "^0.503.0",
@@ -26,14 +29,18 @@
     "next-ws": "^2.0.6",
     "node-static": "^0.7.11",
     "puppeteer": "^24.7.2",
+    "puppeteer-stream": "^3.0.20",
+    "puppeteer-tab-recorder": "^0.2.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "reconnecting-websocket": "^4.4.0",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
+    "twitch-stream-video": "^1.1.4",
     "ws": "^8.18.1"
   },
   "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.10",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -44,5 +51,8 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
+  },
+  "dockerfile": {
+    "litestream": true
   }
 }

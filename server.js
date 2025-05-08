@@ -37,6 +37,7 @@ app.prepare().then(() => {
   httpServer
     .on('request', async (req, res) => {
       const parsedUrl = parse(req.url, true);
+      res.setHeader('fly-region', process.env.FLY_REGION || 'offsite');
       await handle(req, res, parsedUrl);
     }).on('upgrade', (req, socket, head) => {
         console.log(req.url);
