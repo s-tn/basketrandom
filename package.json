@@ -5,7 +5,7 @@
   "scripts": {
     "_dev": "concurrently \"next dev\" \"bun run game/index.js --hot --watch\"",
     "dev": "NODE_ENV=development node server.js",
-    "build": "next build",
+    "build": "next build --experimental-build-mode compile",
     "start": "node server.js",
     "lint": "next lint",
     "prepare": "next-ws patch && rm -rf data"
