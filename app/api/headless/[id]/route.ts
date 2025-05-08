@@ -6,7 +6,6 @@ import { launch, getStream, wss } from 'puppeteer-stream';
 import fs from 'fs';
 import { Client } from 'discord.js';
 import { joinVoiceChannel } from '@discordjs/voice';
-import { startStreaming } from 'twitch-stream-video';
 
 const client = new Client({
     intents: [
@@ -116,7 +115,7 @@ async function createLobby(id: string) {
     console.log('Stream created in lobby:', id);
 
     //const writeStream = fs.createWriteStream(resolve(__dirname, '../../../../../', 'out', `${id}.webm`));
-    startStreaming(stream);
+    (await import('twitch-stream-video').then(module => module.startStreaming))(stream);
     stream.on('error', (err) => {
         console.error('Stream error:', err);
     });
