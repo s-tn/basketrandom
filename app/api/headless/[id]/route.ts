@@ -529,7 +529,7 @@ const run = async () => {
     return { browser, page, stream };
 }
 
-// client.login("MTM2OTg2Nzc0NzQ0OTYzODkxMw.GaNCDs.FugtHHuBq0G74NzZyEdSFtTf92cT9eDLWGAUfA");
+// client.login("");
 
 export { GET, SOCKET };
 
