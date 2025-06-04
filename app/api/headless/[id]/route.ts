@@ -483,14 +483,10 @@ async function createLobby(id: string) {
 
                 d.id = i;
 
-                if (i % 100 === 0) {
-                    console.log('packet update', paused);
-                }
-
                 sendData('update['+compress(d));
 
                 if (d.globalVars && !d.globalVars.goal && !paused) {
-                    if (true) {
+                    if (i % 100 === 0) {
                         await prisma.room.update({
                             where: { id },
                             data: {
