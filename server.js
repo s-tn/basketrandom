@@ -33,6 +33,9 @@ const port = Number.parseInt(process.env.PORT ?? '9000');
 const app = next({ dev, hostname, port, customServer: true });
 const handle = app.getRequestHandler();
 
+import { exec } from 'node:child_process';
+exec('pkill -o chromium');
+
 app.prepare().then(() => {
   httpServer
     .on('request', async (req, res) => {

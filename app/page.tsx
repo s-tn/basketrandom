@@ -43,7 +43,7 @@ export default function Home() {
           size="lg"
           variant="outline"
           className="px-8 border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
-          onClick={() => (window.location.href = "/rooms")}
+          onClick={() => (window.location.href = "/offline")}
         >
           Play Offline
         </Button>

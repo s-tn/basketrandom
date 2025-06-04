@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { getRoomById } from "@/lib/rooms"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useEffect } from "react"
 
 export default async function RoomPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

@@ -33,9 +33,21 @@ export default function RoomsPage() {
           </div>
           <h1 className="text-3xl font-bold">Available Rooms</h1>
         </div>
-        <Button asChild className="bg-basketball-orange hover:bg-basketball-darkOrange">
-          <Link href="/rooms/create">Create Room</Link>
-        </Button>
+        <div className="space-x-2">
+          <Button asChild className="bg-basketball-orange hover:bg-basketball-darkOrange">
+            <Link href="/rooms/create">Create Room</Link>
+          </Button>
+          <Button variant="outline" onClick={() => {
+            const code = prompt("Enter the room code to join:");
+            if (!code?.trim()) {
+              alert("You must enter a room code to join.");
+              return;
+            }
+            return location.href = `/rooms/${code}`;
+          }}>
+            Join Room
+          </Button>
+        </div>
       </div>
 
       <div className="basketball-divider w-full mb-8"></div>

@@ -80,18 +80,19 @@ export function setup(window) {
                 }
         
                 if (argumentsList[0].originalUrl === "refsoc") {
+                    setTimeout(async () => {
+                        window.dispatchEvent(new PointerEvent('pointerdown', {clientX: 0.6 * window.innerWidth/*window.innerWidth * 0.6*/, clientY: window.innerHeight * 0.57}));
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                        window.dispatchEvent(new PointerEvent('pointerup'));
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                        window.dispatchEvent(new PointerEvent('pointerdown', {clientX: 0.4 * window.innerWidth/*window.innerWidth * 0.6*/, clientY: window.innerHeight * 0.57}));
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                        window.dispatchEvent(new PointerEvent('pointerup'));
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    });
                     if (!startGame) {
                         startGame = true;
-                        setTimeout(async () => {
-                            window.dispatchEvent(new PointerEvent('pointerdown', {clientX: 0.6 * window.innerWidth/*window.innerWidth * 0.6*/, clientY: window.innerHeight * 0.57}));
-                            await new Promise((resolve) => setTimeout(resolve, 100));
-                            window.dispatchEvent(new PointerEvent('pointerup'));
-                            await new Promise((resolve) => setTimeout(resolve, 100));
-                            window.dispatchEvent(new PointerEvent('pointerdown', {clientX: 0.4 * window.innerWidth/*window.innerWidth * 0.6*/, clientY: window.innerHeight * 0.57}));
-                            await new Promise((resolve) => setTimeout(resolve, 100));
-                            window.dispatchEvent(new PointerEvent('pointerup'));
-                            await new Promise((resolve) => setTimeout(resolve, 100));
-        
+                        setTimeout(async () => {        
                             window.c3_runtimeInterface._localRuntime.SetSuspended(true);
         
                             resolve()

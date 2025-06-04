@@ -83,11 +83,26 @@ export async function SOCKET(
       }));
     }
 
-    client.on("message", (message) => {
+    client.on("message", async (message) => {
       if (message.toString() === "ping") {
         client.send("pong");
       } else {
         const data = JSON.parse(message.toString());
+        if (data.type === 'room-info') {
+          const info = await prisma.room.findFirst({
+            where: {
+              id: data.roomId
+            }
+          });
+
+          if (info) {
+            client.send(JSON.stringify({
+              type: 'room-info',
+              roomId: info.id,
+              data: info
+            }))
+          }
+        }
         if (data.type === 'start-game') {
           sockets.forEach((socket) => {
             const gameSocket = `/api/headless/${data.roomId}`;

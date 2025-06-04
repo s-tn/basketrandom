@@ -129,8 +129,8 @@ function decompress(fullData) {
         '__'
     ];
     
-    let dict = fullData.match(/([A-Z]{2})=([a-zA-Z0-9_]+)/g);
-    let data = fullData.replace(/^[^()]+\(\)/, '');
+    let dict = fullData.match(/([A-Z]{2})=([a-zA-Z0-9_]+)/g) || [];
+    let data = fullData.replace(/^[^()]*\(\)/, '');
     let obj = Object.fromEntries(dict.map(entry => entry.split('=').map(e => e.trim())));
 
     for (var phrase in obj) {
@@ -190,7 +190,7 @@ console.time();
         instVars: { hold: 0, who: -1 },
         velocity: [ 0, -6.861569090688135e-8 ]
       })));*/
-      console.log(decompress("update[ZA=angle;ZB=instVars;ZC=which;ZD=first;ZE=angular;ZF=jump;ZG=moreJump;ZH=velocity;ZI=649746557371941e;ZJ=angularVelocity;ZK=have;ZL=ready()type|event|,,,event|update|,,,players[x|131.22147322|&&&y|140.71763754|&&&ZA|0.10076757|&&&ZB{ZC|0|^^^ZD|-1|^^^ZE|0|^^^ZF|0|^^^ZG|10.901|}&&&ZH[6.317050217590134e-30^9.ZI-8]&&&ZEVelocity|0|*x|166.09582901|&&&y|140.76058865|&&&ZA|0.08324001|&&&ZB{ZC|3|^^^ZD|-1|^^^ZE|0|^^^ZF|0|^^^ZG|10.901|}&&&ZH[-6.162975822039155e-30^9.ZI-8]&&&ZEVelocity|0|*x|82.25421906|&&&y|140.7621026|&&&ZA|0.0797271|&&&ZB{ZC|0|^^^ZD|1|^^^ZE|0|^^^ZF|0|^^^ZG|10.967|}&&&ZH[2.5750526185906883e-31^9.ZI-8]&&&ZEVelocity|0|*x|54.8797965|&&&y|140.92255831|&&&ZA|0.0298032|&&&ZB{ZC|3|^^^ZD|1|^^^ZE|0|^^^ZF|0|^^^ZG|10.967|}&&&ZH[7.703719777548943e-31^9.ZI-8]&&&ZEVelocity|0|],,,heads[x|134.2393827|&&&y|110.86983257|&&&ZA|6.19241861|&&&ZB{ZC|0|^^^ZD|-1|}&&&ZH[-6.729451907697706e-25^9.ZI-8]*x|168.5901408|&&&y|110.86446895|&&&ZA|6.17235645|&&&ZB{ZC|0|^^^ZD|-1|}&&&ZH[-5.3843503870633856e-24^9.ZI-8]*x|84.64349485|&&&y|110.85740049|&&&ZA|0.25510338|&&&ZB{ZC|0|^^^ZD|-1|}&&&ZH[1.0361141048543276e-29^9.ZI-8]*x|55.77375484|&&&y|110.93588818|&&&ZA|0.22762015|&&&ZB{ZC|0|^^^ZD|-1|}&&&ZH[-1.3461221094304498e-24^9.ZI-8]],,,arms[x|137.02297431|&&&y|113.16146609|&&&ZA|0|&&&ZB{ZK|0|^^^ZL|0|}&&&ZH[0^0]*x|171.41347131|&&&y|113.10696899|&&&ZA|0|&&&ZB{ZK|1|^^^ZL|0|}&&&ZH[0^0]*x|81.49374316|&&&y|112.61211723|&&&ZA|0|&&&ZB{ZK|1|^^^ZL|1|}&&&ZH[0^0]*x|52.71549487|&&&y|112.84559625|&&&ZA|0|&&&ZB{ZK|0|^^^ZL|0|}&&&ZH[0^0]],,,ball{x|171.41347131|***y|129.10696899|***ZB{hold|1|&&&who|2|}***ZH[0&0]},,,id|2706|"))
+      console.log(compress("0"))
     //const decompressed = decompress(compressed);
     //console.log(decompressed);
 //}

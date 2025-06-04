@@ -7,8 +7,15 @@ import { OfflineGame } from "@/components/offline-game"
 
 export default async function RoomPage() {
     return (
-      <div className="container py-8">
-        <OfflineGame />
+      <div className="min-h-screen">
+        <div className="container py-4">
+          <nav className="mb-4">
+            <a href="/" className="text-sm text-muted-foreground hover:text-foreground">
+              ← Back Home
+            </a>
+          </nav>
+          <OfflineGame />
+        </div>
       </div>
     )
 }

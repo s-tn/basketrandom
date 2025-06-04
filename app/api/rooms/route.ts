@@ -12,7 +12,17 @@ export async function POST(request: Request) {
     const data = await request.json()
 
     // Simulate processing time
-    const { id, createdBy: host, name } = data;
+    const { id, createdBy: host, name, maxScore, bestOf, tournament, tPassword } = data;
+
+    if (tournament && tPassword !== 'packets') {
+        return new Response(
+            JSON.stringify({ success: false, message: 'Invalid tournament password' }),
+            {
+                headers: { "Content-Type": "application/json" },
+                status: 400,
+            }
+        );
+    }
 
     const newRoom = await prisma.room.create({
         data: {
@@ -21,6 +31,9 @@ export async function POST(request: Request) {
             name,
             host, // The user creating the room
             createdAt: new Date(),
+            roundGoal: Math.ceil(bestOf / 2),
+            tournament: tournament || false,
+            scoreMax: maxScore || 10,
         },
     });
 

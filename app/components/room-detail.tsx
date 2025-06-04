@@ -9,6 +9,7 @@ import { getRoomById, getRooms, joinRoom, leaveRoom, subscribeToRoomUpdates } fr
 import type { Room } from "@/lib/types"
 import { GameContainer } from "@/components/game-container"
 import { PingIndicator } from "@/components/ping-indicator"
+import ReconnectingWebSocket from 'reconnecting-websocket'
 
 interface RoomDetailProps {
   roomId: string
@@ -26,12 +27,24 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   const [ status, setStatus ] = useState<"connected" | "connecting" | "disconnected">("connecting");
   const [ starting, setStarting ] = useState(false);
   const [ endpoint, setEndpoint ] = useState("");
+  const [socket, setSocket] = useState<ReconnectingWebSocket | null>(null);
 
   useEffect(() => {
     // Get player name from localStorage
     const storedName = localStorage.getItem("playerName")
     if (storedName) {
       setPlayerName(storedName)
+    } else {
+      const name = prompt("Enter your name to join the game:")
+      if (name) {
+        localStorage.setItem("playerName", name)
+        setPlayerName(name)
+        location.reload();
+      } else {
+        alert("You must enter a name to join the game.")
+        router.push("/rooms")
+        return
+      }
     }
 
     // Join the room
@@ -105,9 +118,15 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   useEffect(() => {
     if (!playerName) return;
 
-    const socket = new WebSocket(`/api/lobby/${roomId}`);
+    if (!socket) return setSocket(new ReconnectingWebSocket(`/api/lobby/${roomId}`));
+
+    socket.close = () => {
+      console.log("Socket close attempt");
+      return;
+    }
 
     socket.onopen = () => {
+      console.log("Socket opened");
       setStatus("connected");
       setPing(0);
       if (room.createdBy === playerName) {
@@ -134,6 +153,9 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     setInterval(() => ping(), 1000);
 
     socket.onmessage = (e: MessageEvent) => {
+      if (socket._onmessage) {
+        socket._onmessage(e);
+      }
       if (e.data.toString() === "pong") return;
       const data = JSON.parse(e.data.toString());
       if (data.type === "conn" && data.roomId === roomId) {
@@ -154,6 +176,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     }
 
     socket.onclose = () => {
+      console.log("Socket closed");
       setStatus("disconnected");
       setP1Conn(false);
       setP2Conn(false);
@@ -203,7 +226,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
         setEndpoint(data.gameSocket);
       }
     });
-  }, [roomId, playerName]);
+  }, [roomId, playerName, socket]);
 
   useEffect(() => {
     window.onbeforeunload = function () {
@@ -253,7 +276,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
       </div>
 
       {gameReady ? (
-        <GameContainer roomId={roomId} players={room.players} ws={endpoint} />
+        <GameContainer roomId={roomId} lobbySocket={socket} players={room.players} ws={endpoint} />
       ) : (
         <Card>
           <CardHeader>

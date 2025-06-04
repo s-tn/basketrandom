@@ -106,7 +106,7 @@ async function start() {
     
         pingInterval = setInterval(() => {
             ping(comms.out).then((ping) => {
-                window.postMessage({ type: 'ping', data: ping }, '*');
+                window.postMessage({ type: 'ping', data: ping, scores: [document.querySelector('iframe').contentWindow.savedGlobalVars.p1Score, document.querySelector('iframe').contentWindow.savedGlobalVars.p2Score] }, '*');
             });
         }, 1000);
     
@@ -126,10 +126,23 @@ async function start() {
         }
     
         if (event.data === 'start') {
-            document.querySelector('iframe').contentWindow.started = true;
             window.postMessage({ type: 'start' }, '*');
     
-            comms.in.addEventListener('message', (event) => {
+            if (!document.querySelector('iframe').contentWindow.started) comms.in.addEventListener('message', (event) => {
+                if (event.data.toString().startsWith('round[')) {
+                    const data = decompress(event.data.toString().replace(/^(end|round)\[/, ''));
+
+                    console.log(data);
+                    window.postMessage({ type: 'newround', data: data }, '*');
+
+                    return;
+                }
+
+                if (event.data.toString().startsWith('end[')) {
+                    window.postMessage({ type: 'end', winner: parseInt(event.data.toString().match(/^end\[(\d)\]$/)[1]) }, '*');
+                    return;
+                }
+
                 if (!event.data.toString().startsWith('update[')) {
                     return;
                 }
@@ -279,6 +292,7 @@ async function start() {
                     })(document.querySelector('iframe').contentWindow);
                 }
             });
+            document.querySelector('iframe').contentWindow.started = true;
             comms.in.send(JSON.stringify({ type: 'ready' }));
         } else return false;
     });

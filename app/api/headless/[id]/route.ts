@@ -1,3 +1,4 @@
+import { Browser } from 'puppeteer-core';
 //import prisma from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
 import ws from "ws";
@@ -6,6 +7,10 @@ import { launch, getStream, wss } from 'puppeteer-stream';
 import fs from 'fs';
 import { Client } from 'discord.js';
 import { joinVoiceChannel } from '@discordjs/voice';
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+const conn = prisma.$connect();
 
 const client = new Client({
     intents: [
@@ -40,13 +45,14 @@ function GET() {
 const lobbies: Record<string, Array<any>> = {};
 const sockets: any[] = [];
 
-let browserPromise: Promise<any> | null = null;
+let browserPromise: Promise<Browser> | null = null;
 
  async function SOCKET(
     client: import("ws").WebSocket,
     request: import("http").IncomingMessage,
     server: import("ws").WebSocketServer
   ) {
+    await conn;
     const lobbyId: string = request.url!.split('/')[3].split('?')[0];
     const streamType: string = request.url!.split('?')[1];
     (client as any).lobbyId = lobbyId;
@@ -61,6 +67,7 @@ let browserPromise: Promise<any> | null = null;
         try {
             if (JSON.parse(message.data.toString()).type === 'ready') {
                 (client as any).ready = true; 
+                (client as any).waitingRound = false;
                 console.log(`Client ${(client as any).id} in lobby ${lobbyId} is ready`);
             }
         } catch(e) {}
@@ -89,6 +96,15 @@ async function createLobby(id: string) {
         }, 500);
     });
 
+    const roomInfo = () => prisma.room.findUnique({
+        where: { id },
+    });
+
+    if (!await roomInfo()) {
+        console.log('Room not found:', id);
+        return;
+    }
+
     await twoPlayers;
 
     const clients: () => any[] = () => [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
@@ -114,8 +130,17 @@ async function createLobby(id: string) {
 
     console.log('Stream created in lobby:', id);
 
-    //const writeStream = fs.createWriteStream(resolve(__dirname, '../../../../../', 'out', `${id}.webm`));
-    (await import('twitch-stream-video').then(module => module.startStreaming))(stream);
+    // const writeStream = fs.createWriteStream(resolve(__dirname, '../../../../../', 'out', `${id}.webm`));
+    async function runStream() {
+        const p = (await import('twitch-stream-video').then(module => module.startStreaming))(stream);
+
+        p.then(() => {
+            runStream();
+        });
+    }
+    if ((await roomInfo()).tournament) {
+        runStream();
+    }
     stream.on('error', (err) => {
         console.error('Stream error:', err);
     });
@@ -130,7 +155,10 @@ async function createLobby(id: string) {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
     });
 
+    let paused = false;
+
     async function pause() {
+        paused = true;
         return await browser.page.evaluate(() => {
             let win: any = window;
             return new Promise((resolve) => {
@@ -145,6 +173,7 @@ async function createLobby(id: string) {
     } 
 
     async function resume() {
+        paused = false;
         return await browser.page.evaluate(() => {
             let win: any = window;
             return new Promise((resolve) => {
@@ -158,7 +187,9 @@ async function createLobby(id: string) {
         })
     }
 
-    await browser.page.evaluate(() => {
+    const info = await roomInfo();
+
+    await browser.page.evaluate((scores) => {
         let win: any = window;
         win.c3_runtimeInterface._localRuntime.SetTimeScale(10000000000);
         Object.defineProperties(win, {
@@ -195,8 +226,8 @@ async function createLobby(id: string) {
         });
 
         win.score = {
-            p1: 0,
-            p2: 0
+            p1: scores[0] || 0,
+            p2: scores[1] || 0
         }
 
         win.soundsPlayed = [];
@@ -218,7 +249,7 @@ async function createLobby(id: string) {
                 return target.apply(thisArg, argumentsList);
             }
         });
-    });
+    }, [info.score0, info.score1]);
 
     const { width, height } = browser.page.viewport()!;
 
@@ -281,7 +312,7 @@ async function createLobby(id: string) {
                 resolve();
                 clearInterval(int);
             }
-        }, 500);
+        }, 100);
     });
 
     /*setInterval(async () => {
@@ -321,6 +352,10 @@ async function createLobby(id: string) {
                     break;
                 case 'stream':
                     client.send('start');
+
+                    if ((await roomInfo()).winner !== null) {
+                        sendData('end['+(await roomInfo()).winner+']');
+                    }
 
                     gamers.push(client);
                     break;
@@ -362,6 +397,83 @@ async function createLobby(id: string) {
 
     await resume();
 
+    async function addRound(winner: number) {
+        await pause();
+        const room = await roomInfo();
+        const rounds = JSON.parse(room.rounds);
+        rounds.push([winner, room.score0, room.score1]);
+        await prisma.room.update({
+            where: { id },
+            data: {
+                wins0: winner === 0 ? { increment: 1 } : undefined,
+                wins1: winner === 1 ? { increment: 1 } : undefined,
+                score0: 0,
+                score1: 0,
+                rounds: JSON.stringify(rounds),
+            }
+        });
+        const newRoom = await roomInfo();
+        if (newRoom.wins0 === newRoom.roundGoal) {
+            await prisma.room.update({
+                where: { id },
+                data: {
+                    winner: 0,
+                }
+            });
+            sendData('end[0]');
+        }
+        else if (newRoom.wins1 === newRoom.roundGoal) {
+            await prisma.room.update({
+                where: { id },
+                data: {
+                    winner: 1,
+                }
+            });
+            sendData('end[1]');
+        } else {
+            sendData('round['+compress({ round: rounds.length, score0: room.score0, score1: room.score1 }));
+
+            await browser.page.evaluate(() => {
+                let win: any = window;
+                win.score.p1 = 0;
+                win.score.p2 = 0;
+            });
+
+            await new Promise<void>((resolve) => {
+                clients().forEach(client => {
+                    client.ready = false;
+                    client.waitingRound = true;
+                    //client.send('loaded');
+                });
+                let int = setInterval(() => {
+                    clients().forEach(client => {
+                        // console.log(client.ready, client.waitingRound);
+                        if (!client.waitingRound && !client.ready) {
+                            client.send('round['+compress({ round: rounds.length, score0: room.score0, score1: room.score1 }));
+                            client.waitingRound = true;
+                        }
+                    });
+                    if (clients().filter(cli => cli.ready && !cli.waitingRound).length >= 2) {
+                        console.log('Both clients are ready, starting game');
+                        clients().forEach(client => {
+                            client.send('start');
+                        });
+                        resolve();
+                        clearInterval(int);
+                    }
+                }, 100);
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+
+            await resume();
+        }
+    }
+
+    if ((await roomInfo()).winner !== null) {
+        sendData('end['+(await roomInfo()).winner+']');
+    }
+
     browser.page.on('console', async (msg) => {
         const data = msg.text();
 
@@ -371,7 +483,29 @@ async function createLobby(id: string) {
 
                 d.id = i;
 
+                if (i % 100 === 0) {
+                    console.log('packet update', paused);
+                }
+
                 sendData('update['+compress(d));
+
+                if (d.globalVars && !d.globalVars.goal && !paused) {
+                    if (true) {
+                        await prisma.room.update({
+                            where: { id },
+                            data: {
+                                score0: d.globalVars.p1Score,
+                                score1: d.globalVars.p2Score,
+                            }
+                        });
+
+                        if (d.globalVars.p1Score === (await roomInfo()).scoreMax) {
+                            await addRound(0);
+                        } else if (d.globalVars.p2Score === (await roomInfo()).scoreMax) {
+                            await addRound(1);
+                        }
+                    }
+                }
             } catch {};
         }
     });
@@ -508,7 +642,8 @@ const run = async () => {
         browserPromise = launch({
                 headless: "new",
                 executablePath: exec,
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-infobars', '--disable-dev-shm-usage', '--disable-web-security', '--allow-file-access-from-files', '--disable-web-security'],
+                ignoreDefaultArgs: ['--enable-automation', '--enable-logging', '--v=1'],
                 defaultViewport: {
                     width: 1080,
                     height: 720,
@@ -516,10 +651,65 @@ const run = async () => {
             });
     }
     const browser = await browserPromise;
+    browser.on('disconnected', () => {
+        console.log('Browser disconnected');
+        sockets.forEach((socket) => {
+            socket.close();
+        });
+        browserPromise = null;
+    });
+    browser.on('close', () => {
+        console.log('Browser closed');
+        sockets.forEach((socket) => {
+            socket.close();
+        });
+        browserPromise = null;
+    });
+    browser.on('targetdestroyed', (target) => {
+        console.log('Target destroyed:', target.url());
+    });
     const page = await browser.newPage();
     //page.setViewport({ width: 640, height: 360 });
     await page.goto('http://localhost:9001/');
-    const stream = await getStream(page, { audio: false, video: true, }).catch((err) => {
+    /*const stream = await getStream(page, { audio: false, video: true, }).catch((err) => {
+        console.error('Error getting stream:', err);
+        throw err;
+    });*/
+
+    process.on('SIGINT', async () => {
+        console.log('SIGINT received, closing browser...');
+        try {
+            await browser.close();
+        } catch (err) {
+            console.error('Error closing browser:', err);
+        }
+        process.exit(0);
+    });
+    process.on('SIGTERM', async () => {
+        console.log('SIGTERM received, closing browser...');
+        try {
+            await browser.close();
+        } catch (err) {
+            console.error('Error closing browser:', err);
+        }
+        process.exit(0);
+    });
+    process.on('exit', async () => {
+        console.log('Exit received, closing browser...');
+        try {
+            await browser.close();
+        } catch (err) {
+            console.error('Error closing browser:', err);
+        }
+        process.exit(0);
+    });
+
+    const stream = await getStream(page, {
+        audio: false,
+        video: true,
+        bitsPerSecond: 1000000,
+        frameSize: 8
+    }).catch((err) => {
         console.error('Error getting stream:', err);
         throw err;
     });

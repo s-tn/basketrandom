@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
+import { Fullscreen } from "lucide-react"
 
 export function OfflineGame() {
   const [isLoading, setIsLoading] = useState(true)
@@ -83,6 +84,14 @@ export function OfflineGame() {
 </style>`;
   }
 
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.getElementById('gamecont')!.requestFullscreen();
+    }
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -96,10 +105,13 @@ export function OfflineGame() {
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-muted">
+      <Card className="overflow-hidden" id="gamecont">
+        <CardHeader className="bg-muted py-4">
           <CardTitle className="flex items-center justify-between">
             <span>Game Started</span>
+            <div onClick={toggleFullscreen} className={"border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out hover:bg-primary/50"}>
+              <Fullscreen className="text-white" />
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 relative">

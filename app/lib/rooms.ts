@@ -18,6 +18,9 @@ export const getRooms = async (): Promise<Room[]> => {
         id: room.id,
         name: room.name,
         createdBy: room.host,
+        maxScore: room.scoreMax,
+        score0: room.score0,
+        score1: room.score1,
         players: [room.host, room.oppponent].filter(_ => _), // This would typically be populated with actual player names
         createdAt: room.createdAt.getTime(), // Convert to timestamp for consistency,
         started: room.started // Include started status
@@ -96,6 +99,10 @@ export const createRoom = async (params: CreateRoomParams): Promise<string> => {
   const newRoom: Room = {
     id: generateId(),
     name: params.name,
+    maxScore: parseInt(params.score, 10) || undefined,
+    bestOf: parseInt(params.bestOf, 10) || undefined,
+    tournament: params.tournament,
+    tPassword: params.tPassword || undefined,
     createdBy: params.createdBy,
     players: [params.createdBy],
     createdAt: Date.now(),
@@ -104,9 +111,9 @@ export const createRoom = async (params: CreateRoomParams): Promise<string> => {
 
   localStorage.setItem("playerName", params.createdBy) // Store the player name in localStorage for future reference
 
-  const updatedRooms = [...rooms, newRoom]
-  localStorage.setItem(ROOMS_STORAGE_KEY, JSON.stringify(updatedRooms))
-  await fetch('/api/rooms', {
+  const updatedRooms = [...rooms, newRoom];
+  localStorage.setItem(ROOMS_STORAGE_KEY, JSON.stringify(updatedRooms));
+  return await fetch('/api/rooms', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -116,11 +123,12 @@ export const createRoom = async (params: CreateRoomParams): Promise<string> => {
     if (!res.ok) {
       throw new Error('Failed to save room')
     }
-  }).catch(() => {
-    console.error('Failed to save room to localStorage')
-  })
 
-  return newRoom.id
+    return newRoom.id
+  }).catch(() => {
+    alert('Failed to save room')
+    throw new Error('Failed to save room')
+  })
 }
 
 // Join a room

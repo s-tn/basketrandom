@@ -99,8 +99,8 @@ export function decompress(fullData) {
         '__'
     ];
     
-    let dict = fullData.match(/([A-Z]{2})=([a-zA-Z0-9_]+)/g);
-    let data = fullData.replace(/^[^()]+\(\)/, '');
+    let dict = fullData.match(/([A-Z]{2})=([a-zA-Z0-9_]+)/g) || [];
+    let data = fullData.replace(/^[^()]*\(\)/, '');
     let obj = Object.fromEntries(dict.map(entry => entry.split('=').map(e => e.trim())));
 
     for (var phrase in obj) {

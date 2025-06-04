@@ -19,7 +19,16 @@ model Room {
   id        String   @id
   name      String
   oppponent String?
+  roundGoal Int      @default(3) // Number of rounds left in the game, default is 3
+  rounds     String @default("[]") // JSON string to store rounds data, default is an empty array
+  wins0    Int      @default(0) // Number of wins for player 0, default is 0
+  wins1    Int      @default(0) // Number of wins for player 1, default is 0
   started   Boolean  @default(false) // Indicates whether the game has started or not
+  scoreMax  Int      @default(10)
+  tournament Boolean  @default(false) // Indicates whether the game is a tournament or not
+  score0    Int      @default(0) // Score for player 0, default is 0
+  score1    Int      @default(0) // Score for player 1, default is 0
+  winner    Int? // The winner of the game, can be null if not determined yet
   Socket    Socket[]
 }
 

@@ -3,7 +3,7 @@ export function anticheat(window) {
 
     Object.defineProperty(window, 'c3_runtimeInterface', {
         get: () => {
-            const stack = new Error().stack;
+            /*const stack = new Error().stack;
             const stackLines = stack.split('\n');
             if (stackLines.filter(line => line.includes(`${location.origin}/game.bundle.js`)).length > 1) return original;
             stackLines.splice(0, 2);
@@ -12,7 +12,7 @@ export function anticheat(window) {
                 const error = new Error('Anticheat triggered: c3_runtimeInterface accessed outside of game context');
                 error.stack = stack;
                 throw error;
-            }
+            }*/
             return original;
         }
     });
