@@ -641,8 +641,8 @@ const run = async () => {
                 args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-infobars', '--disable-dev-shm-usage', '--disable-web-security', '--allow-file-access-from-files', '--disable-web-security'],
                 ignoreDefaultArgs: ['--enable-automation', '--enable-logging', '--v=1'],
                 defaultViewport: {
-                    width: 1080,
-                    height: 720,
+                    width: 640,
+                    height: 360,
                 },
             });
     }
