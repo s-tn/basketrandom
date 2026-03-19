@@ -1,39 +1,10 @@
 import { Browser } from 'puppeteer-core';
-//import prisma from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
 import ws from "ws";
 import { resolve } from 'node:path';
 import { launch, getStream, wss } from 'puppeteer-stream';
 import fs from 'fs';
-import { Client } from 'discord.js';
-import { joinVoiceChannel } from '@discordjs/voice';
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-const conn = prisma.$connect();
-
-const client = new Client({
-    intents: [
-        "Guilds",
-        "GuildMessages",
-        "GuildMessageTyping",
-        "MessageContent",
-        "GuildMessageReactions",
-        "GuildVoiceStates",
-        "GuildPresences",
-        "GuildMembers",
-        "GuildEmojisAndStickers",
-        "GuildWebhooks",
-        "GuildIntegrations",
-        "GuildInvites",
-        "GuildScheduledEvents",
-        "GuildBans",
-    ]
-});
-
-client.once('ready', () => {
-    console.log('Discord bot is ready');
-});
 
 function GET() {
     const headers = new Headers();
@@ -52,7 +23,6 @@ let browserPromise: Promise<Browser> | null = null;
     request: import("http").IncomingMessage,
     server: import("ws").WebSocketServer
   ) {
-    await conn;
     const lobbyId: string = request.url!.split('/')[3].split('?')[0];
     const streamType: string = request.url!.split('?')[1];
     (client as any).lobbyId = lobbyId;
@@ -277,12 +247,6 @@ async function createLobby(id: string) {
         }, 1250);
     });
 
-    // await new Promise((resolve) => {
-    //     setTimeout(() => {
-    //         resolve();
-    //     }, 3000);
-    // })
-
     await browser.page.mouse.move((width / 2) + 100, height / 2);
     await browser.page.mouse.click((width / 2) + 100, height / 2);
 
@@ -315,17 +279,18 @@ async function createLobby(id: string) {
         }, 100);
     });
 
-    /*setInterval(async () => {
-        await browser.page.screenshot({
-            path: 'screenshot.png',
-            type: 'png',
-            optimizeForSpeed: true,
-        })
+    // flip a coin 1 or 2
+    const flip = Math.random() < 0.5 ? 1 : 2;
 
-        const data = fs.readFileSync('screenshot.png').toString('base64');
+    clients().forEach(client => {
+        client.send(`coin flipped: ${flip}`);
+    });
 
-        fs.writeFileSync('screenshot.txt', `data:image/png;base64,${data}`);
-    }, 1500);*/
+    await new Promise<void>((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, 5000);
+    });
 
     let gamers: any[] = [];
 
@@ -515,7 +480,7 @@ async function createLobby(id: string) {
                 players: win.players.map((player) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars, velocity: player.behaviors.Physics.getVelocity(), angularVelocity: player.behaviors.Physics.angularVelocity })),
                 heads: win.heads.map((head) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars, velocity: head.behaviors.Physics.getVelocity() })),
                 arms: win.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars, velocity: [0, 0] })),
-                ball: { x: win.ball.x, y: win.ball.y, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
+                ball: { x: win.ball.x, y: win.ball.y, angle: win.ball.angle, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
                 globalVars: {
                     p1Score: win.score.p1,
                     p2Score: win.score.p2,
@@ -529,6 +494,7 @@ async function createLobby(id: string) {
     });
 }
 
+// TODO: Remove when binary protocol is implemented (Task 12)
 function compress(data) {
     const separators = [
         ',',
@@ -636,10 +602,10 @@ const run = async () => {
             'google-chrome-stable');
 
         browserPromise = launch({
-                headless: "new",
+                headless: process.env.HEADLESS !== 'false' ? 'new' : false,
                 executablePath: exec,
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-infobars', '--disable-dev-shm-usage', '--disable-web-security', '--allow-file-access-from-files', '--disable-web-security'],
-                ignoreDefaultArgs: ['--enable-automation', '--enable-logging', '--v=1'],
+                args: ['--enable-automation', '--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-infobars', '--disable-dev-shm-usage', '--disable-web-security', '--allow-file-access-from-files'],
+                ignoreDefaultArgs: ['--enable-logging', '--v=1'],
                 defaultViewport: {
                     width: 640,
                     height: 360,
@@ -665,12 +631,7 @@ const run = async () => {
         console.log('Target destroyed:', target.url());
     });
     const page = await browser.newPage();
-    //page.setViewport({ width: 640, height: 360 });
     await page.goto('http://localhost:9001/');
-    /*const stream = await getStream(page, { audio: false, video: true, }).catch((err) => {
-        console.error('Error getting stream:', err);
-        throw err;
-    });*/
 
     process.on('SIGINT', async () => {
         console.log('SIGINT received, closing browser...');
@@ -700,64 +661,26 @@ const run = async () => {
         process.exit(0);
     });
 
-    const stream = await getStream(page, {
-        audio: false,
-        video: true,
-        bitsPerSecond: 1000000,
-        frameSize: 8
-    }).catch((err) => {
-        console.error('Error getting stream:', err);
-        throw err;
-    });
+    await new Promise(res => setTimeout(res, 2000));
+
+    let stream;
+
+    try {
+        stream = await getStream(page, {
+            audio: false,
+            video: true,
+            bitsPerSecond: 1000000,
+            frameSize: 8
+        }).catch((err) => {
+            console.error('Error getting stream:', err);
+            throw err;
+        });
+    } catch {
+        console.log("couldnt get stream")
+        stream = {}
+    }
 
     return { browser, page, stream };
 }
 
-// client.login("");
-
 export { GET, SOCKET };
-
-
-// /*
-// export async function SOCKET(
-//     client: import("ws").WebSocket,
-//     request: import("http").IncomingMessage,
-//     server: import("ws").WebSocketServer
-//   ) {
-//     const id = request.url?.match(/^\/api\/headless\/(.*)/)?.[1];
-
-//     if (!id) {
-//       return client.close();
-//     }
-
-//     const proxySocket = new WebSocket(`ws://localhost:3001/headless/${id}`);
-
-//     client.on('open', () => {
-//         console.log('Client socket opened');
-//     });
-
-//     proxySocket.addEventListener('open', () => {
-//       console.log('Proxy socket opened');
-//     });
-
-//     proxySocket.addEventListener('message', (event) => {
-//       client.send(event.data);
-//     });
-
-//     proxySocket.addEventListener('close', () => {
-//       client.close();
-//     });
-
-//     proxySocket.addEventListener('error', (error) => {
-//       client.close();
-//     });
-
-
-//     client.on('message', (message: any) => {
-//       proxySocket.send(message);
-//     });
-
-//     client.on('close', () => {
-//       proxySocket.close();
-//     });
-//   }*/
