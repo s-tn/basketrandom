@@ -1,22 +1,28 @@
 export interface Room {
   id: string
   name: string
-  createdBy: string
+  host: string
+  opponent: string | null
   players: string[]
   createdAt: number
-  maxScore?: number
-  bestOf?: number
-  tournament?: boolean
-  tPassword?: string
+  scoreMax: number
+  roundGoal: number
+  tournament: boolean
+  private: boolean
   started: boolean
+  score0: number
+  score1: number
+  winner: number | null
+  rounds: string
+  wins0: number
+  wins1: number
 }
 
 export interface CreateRoomParams {
   name: string
-  createdBy: string
-  score: string
-  bestOf: string
+  host: string
+  scoreMax: number
+  roundGoal: number
   tournament: boolean
   tPassword: string
 }
-
