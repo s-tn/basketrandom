@@ -5,6 +5,7 @@ import ws from "ws";
 import { resolve } from 'node:path';
 import { launch, getStream, wss } from 'puppeteer-stream';
 import fs from 'fs';
+import { encodeSnapshot, encodeDelta, encodeEvent, type GameState } from "@/lib/netcode";
 
 function GET() {
     const headers = new Headers();
@@ -324,7 +325,9 @@ async function createLobby(id: string) {
                     client.send('start');
 
                     if ((await roomInfo()).winner !== null) {
-                        sendData('end['+(await roomInfo()).winner+']');
+                        const w = (await roomInfo()).winner;
+                        const ep = encodeEvent(seq++, 'end', { winner: w });
+                        for (const g of gamers) if (g.readyState === 1) g.send(ep);
                     }
 
                     gamers.push(client);
@@ -346,15 +349,8 @@ async function createLobby(id: string) {
         subscribe(client);
     });
     
-    let i = 0;
-
-    function sendData(d: string) {
-        i ++;
-        gamers.forEach(gamer => {
-            
-            gamer.send(d);
-        });
-    }   
+    let lastState: GameState | null = null;
+    let seq = 0;
 
     console.log(`Starting transmission: ${id}`);
 
@@ -394,7 +390,9 @@ async function createLobby(id: string) {
                     if (remaining) {
                         // Determine which player the remaining one is
                         const remainingIndex = clients().indexOf(remaining);
-                        sendData('end[' + (remainingIndex === 0 ? '0' : '1') + ']');
+                        const winnerIdx = remainingIndex === 0 ? 0 : 1;
+                        const forfeitPacket = encodeEvent(seq++, 'end', { winner: winnerIdx });
+                        for (const g of gamers) if (g.readyState === 1) g.send(forfeitPacket);
                     }
                     clearInterval(disconnectCheck!);
                     setTimeout(() => page.close().catch(() => {}), 2000);
@@ -436,7 +434,8 @@ async function createLobby(id: string) {
                     winner: 0,
                 }
             });
-            sendData('end[0]');
+            const endPacket0 = encodeEvent(seq++, 'end', { winner: 0 });
+            for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket0);
             setTimeout(() => {
                 page.close().catch(() => {});
                 delete lobbies[id];
@@ -450,14 +449,16 @@ async function createLobby(id: string) {
                     winner: 1,
                 }
             });
-            sendData('end[1]');
+            const endPacket1 = encodeEvent(seq++, 'end', { winner: 1 });
+            for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket1);
             setTimeout(() => {
                 page.close().catch(() => {});
                 delete lobbies[id];
                 clearInterval(disconnectCheck!);
             }, 5000);
         } else {
-            sendData('round['+compress({ round: rounds.length, score0: room.score0, score1: room.score1 }));
+            const roundPacket = encodeEvent(seq++, 'round', { round: rounds.length });
+            for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(roundPacket);
 
             await browser.page.evaluate(() => {
                 let win: any = window;
@@ -475,7 +476,8 @@ async function createLobby(id: string) {
                     clients().forEach(client => {
                         // console.log(client.ready, client.waitingRound);
                         if (!client.waitingRound && !client.ready) {
-                            client.send('round['+compress({ round: rounds.length, score0: room.score0, score1: room.score1 }));
+                            const rp = encodeEvent(seq++, 'round', { round: rounds.length });
+                            client.send(rp);
                             client.waitingRound = true;
                         }
                     });
@@ -497,147 +499,93 @@ async function createLobby(id: string) {
     }
 
     if ((await roomInfo()).winner !== null) {
-        sendData('end['+(await roomInfo()).winner+']');
+        const w = (await roomInfo()).winner;
+        const ep = encodeEvent(seq++, 'end', { winner: w });
+        for (const g of gamers) if (g.readyState === 1) g.send(ep);
     }
 
-    browser.page.on('console', async (msg) => {
-        const data = msg.text();
+    await page.exposeFunction('__sendState', (flatState: number[]) => {
+        if (paused) return;
 
-        if (data.startsWith('data:')) {
-            try {
-                const d = JSON.parse(atob(data.slice(5)));
+        const state: GameState = {
+          p0x: flatState[0], p0y: flatState[1], p0angle: flatState[2],
+          p0velX: flatState[3], p0velY: flatState[4], p0armAngle: flatState[5],
+          p1x: flatState[6], p1y: flatState[7], p1angle: flatState[8],
+          p1velX: flatState[9], p1velY: flatState[10], p1armAngle: flatState[11],
+          ballX: flatState[12], ballY: flatState[13], ballAngle: flatState[14],
+          ballVelX: flatState[15], ballVelY: flatState[16],
+          ballHolder: flatState[17],
+          score0: flatState[18], score1: flatState[19],
+          flags: flatState[20],
+        };
 
-                d.id = i;
+        seq++;
 
-                sendData('update['+compress(d));
+        // Detect score changes and update DB
+        if (lastState && (state.score0 !== lastState.score0 || state.score1 !== lastState.score1)) {
+            prisma.room.update({
+                where: { id },
+                data: { score0: state.score0, score1: state.score1 }
+            }).catch(() => {});
 
-                if (d.globalVars && !d.globalVars.goal && !paused) {
-                    if (i % 100 === 0) {
-                        await prisma.room.update({
-                            where: { id },
-                            data: {
-                                score0: d.globalVars.p1Score,
-                                score1: d.globalVars.p2Score,
-                            }
-                        });
-
-                        if (d.globalVars.p1Score === (await roomInfo()).scoreMax) {
-                            await addRound(0);
-                        } else if (d.globalVars.p2Score === (await roomInfo()).scoreMax) {
-                            await addRound(1);
-                        }
-                    }
+            // Check for round win
+            roomInfo().then(async (room) => {
+                if (!room) return;
+                if (state.score0 >= room.scoreMax) {
+                    await addRound(0);
+                } else if (state.score1 >= room.scoreMax) {
+                    await addRound(1);
                 }
-            } catch {};
+            });
+        }
+
+        // Send binary to clients
+        let packet: Buffer;
+        if (!lastState || seq % 300 === 0) {
+            packet = encodeSnapshot(seq, state);
+        } else {
+            const delta = encodeDelta(seq, lastState, state);
+            packet = delta || encodeSnapshot(seq, state);
+        }
+
+        lastState = state;
+
+        for (const gamer of gamers) {
+            if (gamer.readyState === 1) {
+                gamer.send(packet);
+            }
         }
     });
 
     await browser.page.evaluate(() => {
-        let win: any = window;
+        const win = window as any;
         setInterval(() => {
-            console.log('data:' + btoa(JSON.stringify({
-                type: "event",
-                event: "update",
-                players: win.players.map((player) => ({ x: player.x, y: player.y, angle: player.angle, instVars: player.instVars, velocity: player.behaviors.Physics.getVelocity(), angularVelocity: player.behaviors.Physics.angularVelocity })),
-                heads: win.heads.map((head) => ({ x: head.x, y: head.y, angle: head.angle, instVars: head.instVars, velocity: head.behaviors.Physics.getVelocity() })),
-                arms: win.arms.map((arm) => ({ x: arm.x, y: arm.y, angle: arm.angle, instVars: arm.instVars, velocity: [0, 0] })),
-                ball: { x: win.ball.x, y: win.ball.y, angle: win.ball.angle, instVars: {hold: win.ball.instVars.hold, who: win.ball.instVars.who}, velocity: win.ball.behaviors.Physics.getVelocity() },
-                globalVars: {
-                    p1Score: win.score.p1,
-                    p2Score: win.score.p2,
-                    goal: win.globalVars.goal,
-                },
-            })));
-            console.clear();
-        }, 1000 / 96);
+          try {
+            const p0 = win.players[0];
+            const p1 = win.players[2]; // body3 = player 1
+            const ball = win.ball;
+            const arm0 = win.arms[0];
+            const arm1 = win.arms[2];
+            const p0vel = p0.behaviors.Physics.getVelocity();
+            const p1vel = p1.behaviors.Physics.getVelocity();
+            const ballVel = ball.behaviors.Physics.getVelocity();
 
-        return true;
+            win.__sendState([
+              p0.x, p0.y, p0.angle,
+              p0vel[0], p0vel[1], arm0.angle,
+              p1.x, p1.y, p1.angle,
+              p1vel[0], p1vel[1], arm1.angle,
+              ball.x, ball.y, ball.angle,
+              ballVel[0], ballVel[1],
+              ball.instVars.hold ? ball.instVars.who : 0,
+              win.score.p1, win.score.p2,
+              0, // flags
+            ]);
+          } catch {}
+        }, 1000 / 60); // 60 Hz
     });
 }
 
-// TODO: Remove when binary protocol is implemented (Task 12)
-function compress(data) {
-    const separators = [
-        ',',
-        '*',
-        '&',
-        '^',
-        '~',
-        '=',
-        '@',
-        '//',
-        '??',
-        '..',
-        'AA',
-        'QT',
-        '``',
-        '__'
-    ];
-    
-    const replacements = [
-        'ZA',
-        'ZB',
-        'ZC',
-        'ZD',
-        'ZE',
-        'ZF',
-        'ZG',
-        'ZH',
-        'ZI',
-        'ZJ',
-        'ZK',
-        'ZL',
-        'ZM',
-        'ZN',
-        'ZO',
-        'ZP',
-        'ZQ',
-        'ZR'
-    ];
-    
-    function iterCondense(data, layer = 0) {
-        if (typeof data !== 'object') return data;
-    
-        const sep = separators[layer];
-    
-        return Object.keys(data).map((key, i, obj) => {
-            if (!isNaN(parseFloat(data[key])) && !Array.isArray(data[key])) data[key] = parseFloat(data[key]);
-    
-            if (Array.isArray(data[key])) {
-                return `${i === 0 ? '' : sep}${key}[${data[key].map(entry => `${iterCondense(entry, layer + 2)}`).join(separators[layer + 1])}]${i === obj.length - 1 ? '' : sep}`;
-            } else if (typeof data[key] === 'object') {
-                return `${i === 0 ? '' : sep}${key}{${iterCondense(data[key], layer + 1)}}${i === obj.length - 1 ? '' : sep}`;
-            } else if (typeof data[key] === 'number') {
-                return `${i === 0 ? '' : sep}${key}|${String(parseFloat(data[key].toFixed(8)))}|${i === obj.length - 1 ? '' : sep}`;
-            } else {
-                return `${i === 0 ? '' : sep}${key}|${String(data[key])}|${i === obj.length - 1 ? '' : sep}`;
-            }
-        }).join(sep);
-    }
-    
-    function compressNames(data) {
-        const matches = data.match(/\w{4,}/g);
-        const obj = {};
-        matches.forEach(match => obj[match] = (obj[match] || 0) + 1);
-    
-        for (var phrase in obj) {
-            if (obj[phrase] < 4) {
-                delete obj[phrase];
-                continue;
-            }
-    
-            obj[phrase] = replacements[Object.keys(obj).indexOf(phrase)];
-    
-            data = data.replaceAll(phrase, obj[phrase]);
-        }
-    
-        const dict = Object.entries(obj).map(entry => entry.toReversed()).map(([key, prop]) => `${key}=${prop}`).join(';');
-    
-        return `${dict}()${data}`;
-    }
-    
-    return compressNames(iterCondense(data));
-}
 
 const __dirname = (import.meta.url ?
     import.meta.url.replace(/^file:\/\//, '') :
