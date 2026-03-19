@@ -31,6 +31,11 @@ let browserPromise: Promise<Browser> | null = null;
     (client as any).ready = false;
     sockets.push(client);
 
+    client.addEventListener('close', () => {
+        const idx = sockets.indexOf(client);
+        if (idx !== -1) sockets.splice(idx, 1);
+    });
+
     console.log(`Client connected to lobby: ${lobbyId} with goal: ${streamType}`);
 
     client.addEventListener('message', (message) => {
@@ -362,6 +367,52 @@ async function createLobby(id: string) {
 
     await resume();
 
+    let disconnectCheck: ReturnType<typeof setInterval> | null = null;
+    let disconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    disconnectCheck = setInterval(() => {
+        // Clean dead connections from gamers
+        gamers = gamers.filter(g => g.readyState === 1); // WebSocket.OPEN = 1
+
+        if (gamers.length === 0) {
+            // Both disconnected — close everything
+            clearInterval(disconnectCheck!);
+            page.close().catch(() => {});
+            delete lobbies[id];
+            return;
+        }
+
+        if (gamers.length < 2 && !paused && !disconnectTimeout) {
+            // One player disconnected — pause and wait
+            pause();
+            gamers.forEach(g => g.send(JSON.stringify({ type: 'opponent-disconnected' })));
+
+            disconnectTimeout = setTimeout(() => {
+                // 30 seconds passed, no reconnect — forfeit
+                if (gamers.filter(g => g.readyState === 1).length < 2) {
+                    const remaining = gamers.find(g => g.readyState === 1);
+                    if (remaining) {
+                        // Determine which player the remaining one is
+                        const remainingIndex = clients().indexOf(remaining);
+                        sendData('end[' + (remainingIndex === 0 ? '0' : '1') + ']');
+                    }
+                    clearInterval(disconnectCheck!);
+                    setTimeout(() => page.close().catch(() => {}), 2000);
+                    delete lobbies[id];
+                }
+                disconnectTimeout = null;
+            }, 30000);
+        }
+
+        if (gamers.length >= 2 && disconnectTimeout) {
+            // Player reconnected — cancel forfeit timer and resume
+            clearTimeout(disconnectTimeout);
+            disconnectTimeout = null;
+            resume();
+            gamers.forEach(g => g.send(JSON.stringify({ type: 'opponent-reconnected' })));
+        }
+    }, 2000);
+
     async function addRound(winner: number) {
         await pause();
         const room = await roomInfo();
@@ -386,6 +437,11 @@ async function createLobby(id: string) {
                 }
             });
             sendData('end[0]');
+            setTimeout(() => {
+                page.close().catch(() => {});
+                delete lobbies[id];
+                clearInterval(disconnectCheck!);
+            }, 5000);
         }
         else if (newRoom.wins1 === newRoom.roundGoal) {
             await prisma.room.update({
@@ -395,6 +451,11 @@ async function createLobby(id: string) {
                 }
             });
             sendData('end[1]');
+            setTimeout(() => {
+                page.close().catch(() => {});
+                delete lobbies[id];
+                clearInterval(disconnectCheck!);
+            }, 5000);
         } else {
             sendData('round['+compress({ round: rounds.length, score0: room.score0, score1: room.score1 }));
 
