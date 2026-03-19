@@ -40,8 +40,6 @@ export function OfflineGame() {
 
         cw.AudioDOMHandler.prototype._Play = new Proxy(cw.AudioDOMHandler.prototype._Play, {
         apply: (target, thisArg, argumentsList) => {
-            console.log(argumentsList[0].originalUrl)
-
             if (argumentsList[0].originalUrl === "file") {
                 cw.globalVars.p1Score = 0;
                 cw.globalVars.p2Score = 0;
@@ -60,29 +58,6 @@ export function OfflineGame() {
     }
     }
   }, [isLoading])
-
-  function cancer() {
-    return `<style>
-
-    @keyframes idk {
-        0% {
-            transform: rotate3d(1, 1, 1, 90deg);
-}
-        25% {
-            transform: rotate3d(0, 0, 0, 0deg);
-}
-        40% {
-            transform: rotate3d(-1, 1, 0, 80deg);
-}
-        70% {
-            transform: rotate3d(1, 2, 1, 9deg);
-}
-        100% {
-            transform: rotate3d(1, 1, 1, 90deg);
-}
-}
-</style>`;
-  }
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {

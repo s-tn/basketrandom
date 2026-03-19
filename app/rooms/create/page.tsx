@@ -22,8 +22,6 @@ export default function CreateRoomPage() {
 
     let tPassword = "";
 
-    console.log(e.currentTarget.tournament[1].checked);
-
     if (e.currentTarget.tournament[1].checked) {
       tPassword = prompt("Enter tournament mode password") || "";
     }

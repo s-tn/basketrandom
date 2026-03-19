@@ -37,16 +37,6 @@ export async function POST(request: Request) {
         },
     });
 
-    const socket = await prisma.socket.create({
-        data: {
-            roomId: newRoom.id,
-            type: 'lobby'
-        }
-    });
-
-    // Log the newly created room for debugging
-    console.log('New room created:', newRoom)
-
     // Respond with a success message
     return new Response(
         JSON.stringify({ success: true }),
@@ -58,7 +48,6 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-    console.log('put')
     // Parse the incoming request body
     const data = await request.json()
 
@@ -69,7 +58,7 @@ export async function PUT(request: Request) {
         data: {
             name, // Update the name of the room
             host, // Update the host if necessary
-            oppponent: players && players.length > 1 ? players[1] : null, // Update the opponent if provided
+            opponent: players && players.length > 1 ? players[1] : null, // Update the opponent if provided
         },
     })
 

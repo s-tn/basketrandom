@@ -19,10 +19,6 @@ export async function DELETE(request: Request) {
     await prisma.room.delete({
         where: { id },
     })
-    console.log(`Room with ID ${id} deleted`)
-    await prisma.socket.deleteMany({
-        where: { roomId: id },
-    })
     return new Response(
         JSON.stringify({ success: true }),
         {
@@ -33,7 +29,6 @@ export async function DELETE(request: Request) {
 }
 
 export async function PUT(request: Request) {
-    console.log('put')
     // Parse the incoming request body
     const data = await request.json()
 
@@ -44,7 +39,7 @@ export async function PUT(request: Request) {
         data: {
             name, // Update the name of the room
             host, // Update the host if necessary
-            oppponent: players && players.length > 1 ? players[1] : null, // Update the opponent if provided
+            opponent: players && players.length > 1 ? players[1] : null, // Update the opponent if provided
             started, // Reset the started status
         },
     })
