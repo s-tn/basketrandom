@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { checkRoomExists } from "@/lib/rooms"
+import { getRoomById } from "@/lib/rooms"
 
 export function JoinByIdForm() {
   const router = useRouter()
@@ -24,7 +24,7 @@ export function JoinByIdForm() {
     setError("")
 
     try {
-      const exists = await checkRoomExists(roomId)
+      const exists = await getRoomById(roomId)
 
       if (!exists) {
         setError("Room not found")

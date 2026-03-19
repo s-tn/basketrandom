@@ -92,7 +92,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
 
   const handleLeaveRoom = async () => {
     try {
-      if (playerName === room.createdBy) {
+      if (playerName === room.host) {
         const rooms = await getRooms()
         const roomIndex = rooms.findIndex((room) => room.id === roomId)
         if (roomIndex !== -1) {
@@ -129,7 +129,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
       console.log("Socket opened");
       setStatus("connected");
       setPing(0);
-      if (room.createdBy === playerName) {
+      if (room.host === playerName) {
         setP1Conn(true);
       } else {
         setP2Conn(true);
@@ -163,7 +163,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
           setP1Conn(true);
           setP2Conn(true);
         } else if (data.sockets === 1) {
-          if (room.createdBy === playerName) {
+          if (room.host === playerName) {
             setP1Conn(true);
           } else {
             setP2Conn(true);
@@ -202,7 +202,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
           body: JSON.stringify({
             id: roomId,
             name: room.name,
-            createdBy: room.createdBy,
+            host: room.host,
             players: room.players,
             started: true
           }),
@@ -268,7 +268,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
         </div>
         <Button variant="outline" onClick={handleLeaveRoom}>
           {
-            playerName === room.createdBy
+            playerName === room.host
               ? "Close Room"
               : "Leave Room"
           }
@@ -296,7 +296,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
                     <div key={index} className="flex items-center p-2 border rounded-md">
                       <div className={`w-2 h-2 mr-2 rounded-full` + ((index === 0 ? p1conn : p2conn) ? ' bg-green-500' : ' bg-red-500')}></div>
                       <span>{player}</span>
-                      {player === room.createdBy && (
+                      {player === room.host && (
                         <Badge variant="outline" className="ml-2">
                           Host
                         </Badge>
@@ -338,7 +338,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
           <CardFooter className="justify-between">
             <PingIndicator ping={ping} status={status} />
             {
-              playerName === room.createdBy ?
+              playerName === room.host ?
                 <Button disabled={(room.players.length < 2 || !p1conn || !p2conn) || starting} id="start-game">Start Game</Button> :
                 <Button disabled className="opacity-50 cursor-not-allowed">
                   Waiting for Host...

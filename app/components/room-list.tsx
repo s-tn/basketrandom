@@ -80,7 +80,7 @@ export function RoomList() {
                 {room.players.length}/2 Players
               </Badge>
             </div>
-            <CardDescription>Created by {room.createdBy}</CardDescription>
+            <CardDescription>Created by {room.host}</CardDescription>
           </CardHeader>
           <CardContent className="pb-2">
             <p className="text-sm text-muted-foreground">

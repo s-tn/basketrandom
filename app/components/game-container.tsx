@@ -135,6 +135,14 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
 
         await gameLoaded;
 
+        if (event.data.type === 'coinflip') {
+          if (event.data.phase === 'start') {
+            setMessage("");
+          } else {
+            setMessage("Waiting for host...")
+          }
+        }
+
         if (event.data.type === 'loaded') {
           setReady(false);
           setMessage("Waiting for start...")

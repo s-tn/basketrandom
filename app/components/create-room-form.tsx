@@ -26,7 +26,11 @@ export function CreateRoomForm() {
     try {
       const roomId = await createRoom({
         name: roomName,
-        createdBy: playerName,
+        host: playerName,
+        scoreMax: 21,
+        roundGoal: 1,
+        tournament: false,
+        tPassword: '',
       })
 
       // Store player name in localStorage for persistence

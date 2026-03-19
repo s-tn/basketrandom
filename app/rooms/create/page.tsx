@@ -30,9 +30,9 @@ export default function CreateRoomPage() {
 
     createRoom({
       name: e.currentTarget.courtName.value,
-      createdBy: e.currentTarget.playerName.value,
-      score: e.currentTarget.score[1].value,
-      bestOf: e.currentTarget.bestof[1].value,
+      host: e.currentTarget.playerName.value,
+      scoreMax: parseInt(e.currentTarget.score[1].value, 10) || 21,
+      roundGoal: parseInt(e.currentTarget.bestof[1].value, 10) || 1,
       tournament: e.currentTarget.tournament[1].checked,
       tPassword: tPassword,
     }).then((room) => {
