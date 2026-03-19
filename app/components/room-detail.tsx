@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,6 +28,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   const [ starting, setStarting ] = useState(false);
   const [ endpoint, setEndpoint ] = useState("");
   const [socket, setSocket] = useState<ReconnectingWebSocket | null>(null);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // Get player name from localStorage
@@ -76,18 +77,15 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   }, [roomId])
 
   useEffect(() => {
-    if (isJoined) {
-      const int = setInterval(async () => {
-        console.log(room.players.length);
-        if (room.players.length < 2) {
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-
-          setRoom(await getRoomById(roomId) as Room);
-        } else {
-          clearInterval(int)
-        }
-      }, 1000);
-    }
+    if (!isJoined) return;
+    const int = setInterval(async () => {
+      if (room.players.length < 2) {
+        setRoom(await getRoomById(roomId) as Room);
+      } else {
+        clearInterval(int);
+      }
+    }, 1000);
+    return () => clearInterval(int);
   }, [isJoined]);
 
   const handleLeaveRoom = async () => {
@@ -102,7 +100,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
             if (!res.ok) {
               throw new Error("Failed to delete room")
             }
-            return router.push("/rooms")
+            return push("/rooms")
           });
         }
       }
@@ -121,12 +119,10 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     if (!socket) return setSocket(new ReconnectingWebSocket(`/api/lobby/${roomId}`));
 
     socket.close = () => {
-      console.log("Socket close attempt");
       return;
     }
 
     socket.onopen = () => {
-      console.log("Socket opened");
       setStatus("connected");
       setPing(0);
       if (room.host === playerName) {
@@ -150,7 +146,8 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
       }
     }
 
-    setInterval(() => ping(), 1000);
+    if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+    pingIntervalRef.current = setInterval(() => ping(), 1000);
 
     socket.onmessage = (e: MessageEvent) => {
       if (socket._onmessage) {
@@ -176,7 +173,6 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     }
 
     socket.onclose = () => {
-      console.log("Socket closed");
       setStatus("disconnected");
       setP1Conn(false);
       setP2Conn(false);
@@ -226,12 +222,19 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
         setEndpoint(data.gameSocket);
       }
     });
+
+    return () => {
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+    };
   }, [roomId, playerName, socket]);
 
   useEffect(() => {
-    window.onbeforeunload = function () {
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
       return "Are you sure you want to leave this page?";
-    }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
   function push(url: string) {

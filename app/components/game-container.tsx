@@ -46,7 +46,6 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
 
   useEffect(() => {
     if (lobbySocket) {
-      console.log('eeeee')
       lobbySocket._onmessage = (event) => {
         if (event.data === "pong") return;
         const data = JSON.parse(event.data);
