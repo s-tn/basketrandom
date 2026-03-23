@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma"
+import { notify } from "@/lib/discord"
 
 export async function GET() {
     return new Response(JSON.stringify(await prisma.room.findMany()), {
@@ -36,6 +37,8 @@ export async function POST(request: Request) {
             scoreMax: maxScore || 10,
         },
     });
+
+    notify('room_created', { host, name });
 
     // Respond with a success message
     return new Response(

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { notify } from "@/lib/discord";
 
 export async function GET() {
   const tournaments = await prisma.tournament.findMany({
@@ -21,5 +22,6 @@ export async function POST(request: Request) {
       createdBy: body.createdBy,
     },
   });
+  notify('tournament_created', { name: body.name, format: body.format, maxPlayers: body.maxPlayers || 8 });
   return NextResponse.json(tournament, { status: 201 });
 }

@@ -49,6 +49,8 @@ app.prepare().then(() => {
     })
     .listen(port, () => {
       console.log(` ▲ Ready on http://${hostname}:${port}`);
+      // Trigger Discord bot init
+      fetch(`http://localhost:${port}/api/discord-init`).catch(() => {});
 
       /*setInterval(() => {
         fetch('http://localhost:9000/api/lobby/empty', {
