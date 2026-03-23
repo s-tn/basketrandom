@@ -24,4 +24,54 @@ model Room {
   score0    Int      @default(0)
   score1    Int      @default(0)
   winner    Int?
+  tournamentMatch TournamentMatch?
+}
+
+model Tournament {
+  id          String   @id @default(cuid())
+  name        String
+  format      String
+  status      String   @default("registration")
+  streamed    Boolean  @default(false)
+  private     Boolean  @default(false)
+  maxPlayers  Int      @default(8)
+  createdAt   DateTime @default(now())
+  createdBy   String
+
+  participants TournamentParticipant[]
+  matches      TournamentMatch[]
+}
+
+model TournamentParticipant {
+  id           String     @id @default(cuid())
+  tournamentId String
+  playerName   String
+  seed         Int?
+  eliminated   Boolean    @default(false)
+  wins         Int        @default(0)
+  losses       Int        @default(0)
+  joinedAt     DateTime   @default(now())
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  matchesAsP0  TournamentMatch[] @relation("MatchPlayer0")
+  matchesAsP1  TournamentMatch[] @relation("MatchPlayer1")
+  matchesWon   TournamentMatch[] @relation("MatchWinner")
+}
+
+model TournamentMatch {
+  id           String     @id @default(cuid())
+  tournamentId String
+  roomId       String?    @unique
+  round        Int
+  matchIndex   Int
+  player0Id    String?
+  player1Id    String?
+  winnerId     String?
+  status       String     @default("pending")
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  room         Room?      @relation(fields: [roomId], references: [id])
+  player0      TournamentParticipant? @relation("MatchPlayer0", fields: [player0Id], references: [id])
+  player1      TournamentParticipant? @relation("MatchPlayer1", fields: [player1Id], references: [id])
+  winner       TournamentParticipant? @relation("MatchWinner", fields: [winnerId], references: [id])
 }
