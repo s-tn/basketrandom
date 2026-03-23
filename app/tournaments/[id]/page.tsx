@@ -108,10 +108,10 @@ export default function TournamentDetailPage() {
       return
     }
     setActionLoading(true)
-    await fetch(`/api/tournaments/${id}/join`, {
+    await fetch(`/api/tournaments/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerName }),
+      body: JSON.stringify({ action: "join", playerName }),
     })
     fetchTournament()
     setActionLoading(false)
@@ -119,10 +119,10 @@ export default function TournamentDetailPage() {
 
   async function handleLeave() {
     setActionLoading(true)
-    await fetch(`/api/tournaments/${id}/leave`, {
+    await fetch(`/api/tournaments/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerName }),
+      body: JSON.stringify({ action: "leave", playerName }),
     })
     fetchTournament()
     setActionLoading(false)
@@ -130,10 +130,10 @@ export default function TournamentDetailPage() {
 
   async function handleStart() {
     setActionLoading(true)
-    await fetch(`/api/tournaments/${id}/start`, {
+    await fetch(`/api/tournaments/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerName }),
+      body: JSON.stringify({ action: "start" }),
     })
     fetchTournament()
     setActionLoading(false)

@@ -76,11 +76,11 @@ test.describe('Tournament API', () => {
     expect(detail.status).toBe('in_progress');
     // 4 players = 2 round-1 matches + 1 final = 3 total matches
     expect(detail.matches.length).toBe(3);
-    // Round 1 matches should have players assigned
-    const round1 = detail.matches.filter((m: any) => m.round === 1);
-    expect(round1.length).toBe(2);
-    expect(round1[0].player0).not.toBeNull();
-    expect(round1[0].player1).not.toBeNull();
+    // Round 0 (first round) matches should have players assigned
+    const round0 = detail.matches.filter((m: any) => m.round === 0);
+    expect(round0.length).toBe(2);
+    expect(round0[0].player0).not.toBeNull();
+    expect(round0[0].player1).not.toBeNull();
   });
 
   test('can list tournaments', async ({ request }) => {

@@ -70,6 +70,11 @@ export function decodePacket(arrayBuffer) {
         }
       }
 
+      // Trailing bytes: score0, score1, flags (always present)
+      changes.score0 = view.getUint8(offset++);
+      changes.score1 = view.getUint8(offset++);
+      changes.flags = view.getUint8(offset++);
+
       return { type, seq, timestamp, bitmask, changes };
     }
 

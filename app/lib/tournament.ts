@@ -124,13 +124,15 @@ export async function advanceWinner(
 // ─── completeMatch ────────────────────────────────────────────────────────────
 
 export async function completeMatch(roomId: string, winnerIndex: number) {
-  const match = await prisma.tournamentMatch.findUniqueOrThrow({
+  const match = await prisma.tournamentMatch.findUnique({
     where: { roomId },
     include: { player0: true, player1: true },
   })
 
+  if (!match) return; // Not a tournament match — normal room, skip
+
   const winnerId = winnerIndex === 0 ? match.player0Id : match.player1Id
-  if (!winnerId) throw new Error("Winner participant not found")
+  if (!winnerId) return; // Winner participant not found
 
   const loserId = winnerIndex === 0 ? match.player1Id : match.player0Id
 

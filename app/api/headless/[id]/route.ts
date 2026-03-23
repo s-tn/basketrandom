@@ -369,15 +369,17 @@ async function createLobby(id: string) {
     let disconnectCheck: ReturnType<typeof setInterval> | null = null;
     let disconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    disconnectCheck = setInterval(() => {
+    disconnectCheck = setInterval(async () => {
         // Clean dead connections from gamers
         gamers = gamers.filter(g => g.readyState === 1); // WebSocket.OPEN = 1
 
         if (gamers.length === 0) {
             // Both disconnected — close everything
             clearInterval(disconnectCheck!);
-            const { stopVoiceStream } = await import("@/lib/discord");
-            stopVoiceStream();
+            try {
+                const { stopVoiceStream } = await import("@/lib/discord");
+                stopVoiceStream();
+            } catch {}
             page.close().catch(() => {});
             delete lobbies[id];
             return;

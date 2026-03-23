@@ -13,40 +13,32 @@ export async function POST(request: Request) {
     const data = await request.json()
 
     // Simulate processing time
-    const { id, createdBy: host, name, maxScore, bestOf, tournament, tPassword } = data;
+    const { id, host, name, scoreMax, roundGoal, tournament, tPassword } = data;
 
     if (tournament && tPassword !== 'packets') {
         return new Response(
-            JSON.stringify({ success: false, message: 'Invalid tournament password' }),
-            {
-                headers: { "Content-Type": "application/json" },
-                status: 400,
-            }
+            JSON.stringify({ error: 'Invalid tournament password' }),
+            { headers: { "Content-Type": "application/json" }, status: 400 }
         );
     }
 
     const newRoom = await prisma.room.create({
         data: {
-            // Use the provided data to create a new room
-            id, // Ensure this is unique or let the database generate it
+            id,
             name,
-            host, // The user creating the room
+            host,
             createdAt: new Date(),
-            roundGoal: Math.ceil(bestOf / 2),
+            roundGoal: roundGoal || 3,
             tournament: tournament || false,
-            scoreMax: maxScore || 10,
+            scoreMax: scoreMax || 10,
         },
     });
 
     notify('room_created', { host, name });
 
-    // Respond with a success message
     return new Response(
-        JSON.stringify({ success: true }),
-        {
-            headers: { "Content-Type": "application/json" },
-            status: 200,
-        }
+        JSON.stringify(newRoom),
+        { headers: { "Content-Type": "application/json" }, status: 201 }
     )
 }
 
@@ -54,7 +46,7 @@ export async function PUT(request: Request) {
     // Parse the incoming request body
     const data = await request.json()
 
-    const { id, createdBy: host, name, players } = data;
+    const { id, host, name, players } = data;
 
     await prisma.room.update({
         where: { id }, // Specify the room to update by ID
