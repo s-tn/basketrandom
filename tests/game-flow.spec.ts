@@ -39,4 +39,31 @@ test.describe('Game Flow', () => {
     await ctx1.close();
     await ctx2.close();
   });
+
+  test('room API supports create, get, delete lifecycle', async ({ request }) => {
+    const roomId = 'lifecycle-' + Date.now();
+
+    // Create
+    const createRes = await request.post('/api/rooms', {
+      data: {
+        id: roomId,
+        name: 'Lifecycle Test',
+        host: 'TestPlayer',
+        scoreMax: 10,
+        roundGoal: 3,
+        tournament: false,
+        tPassword: '',
+      },
+    });
+    expect(createRes.ok()).toBeTruthy();
+
+    // List should include it
+    const listRes = await request.get('/api/rooms');
+    const rooms = await listRes.json();
+    expect(rooms.some((r: any) => r.id === roomId)).toBeTruthy();
+
+    // Delete
+    const deleteRes = await request.delete(`/api/rooms/${roomId}`);
+    expect(deleteRes.ok()).toBeTruthy();
+  });
 });
