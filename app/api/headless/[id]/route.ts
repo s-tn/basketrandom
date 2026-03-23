@@ -89,7 +89,26 @@ async function createLobby(id: string) {
     console.log('Starting game in lobby:', id);
     const browser = await run();
     const page = browser.page;
-    const stream = browser.stream;
+
+    // Enable streaming for tournament matches only
+    let stream: any = null;
+    const roomData = await roomInfo();
+    if (roomData?.tournament && roomData?.private) {
+        try {
+            stream = await getStream(page, { audio: true, video: true, bitsPerSecond: 1000000, frameSize: 8 });
+        } catch {
+            console.warn('Could not get stream for tournament match');
+        }
+
+        // Pipe to Twitch if configured
+        if (stream && process.env.TWITCH_STREAM_KEY) {
+            try {
+                const { startStreaming } = await import('twitch-stream-video');
+                startStreaming(stream).catch(() => {});
+            } catch {}
+        }
+    }
+
     await page.evaluate(() => {
         return new Promise<void>((resolve) => {
             const originalLog = console.log;
@@ -104,29 +123,6 @@ async function createLobby(id: string) {
         });
     });
     console.log('Game loaded in lobby:', id);
-
-    console.log('Stream created in lobby:', id);
-
-    // const writeStream = fs.createWriteStream(resolve(__dirname, '../../../../../', 'out', `${id}.webm`));
-    async function runStream() {
-        const p = (await import('twitch-stream-video').then(module => module.startStreaming))(stream);
-
-        p.then(() => {
-            runStream();
-        });
-    }
-    if ((await roomInfo()).tournament) {
-        runStream();
-    }
-    stream.on('error', (err) => {
-        console.error('Stream error:', err);
-    });
-    stream.on('close', () => {
-        console.log('Stream closed');   
-    });
-    stream.on('open', () => {
-        console.log('Stream opened');
-    });
 
     clients().forEach((cli) => {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
@@ -675,24 +671,7 @@ const run = async () => {
 
     await new Promise(res => setTimeout(res, 2000));
 
-    let stream;
-
-    try {
-        stream = await getStream(page, {
-            audio: false,
-            video: true,
-            bitsPerSecond: 1000000,
-            frameSize: 8
-        }).catch((err) => {
-            console.error('Error getting stream:', err);
-            throw err;
-        });
-    } catch {
-        console.log("couldnt get stream")
-        stream = {}
-    }
-
-    return { browser, page, stream };
+    return { browser, page };
 }
 
 export { GET, SOCKET };
