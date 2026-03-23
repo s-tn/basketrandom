@@ -1,24 +1,36 @@
-# fly.toml app configuration file generated for basketrandom on 2025-05-06T08:53:15-04:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
-app = 'basketrandom'
-primary_region = 'iad'
+app = "basket-random"
+primary_region = "iad"
 
 [build]
 
-[[mounts]]
-  source = 'data'
-  destination = '/data'
-  auto_extend_size_threshold = 80
-  auto_extend_size_increment = '1GB'
-  auto_extend_size_limit = '10GB'
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  DATABASE_URL = "file:/data/prod.db"
+  HEADLESS = "true"
 
-[http_service]
-  internal_port = 9000
-  force_https = true
-  auto_stop_machines = 'stop'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
+[mounts]
+  source = "data"
+  destination = "/data"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 50
+
+  [[services.http_checks]]
+    interval = 10000
+    timeout = 2000
+    path = "/api/ping"

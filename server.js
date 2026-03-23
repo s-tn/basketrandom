@@ -5,6 +5,14 @@ import { setHttpServer, setWebSocketServer } from 'next-ws/server';
 import { WebSocketServer } from 'ws';
 import * as esbuild from 'esbuild';
 
+const requiredEnv = ['DATABASE_URL'];
+for (const key of requiredEnv) {
+  if (!process.env[key]) {
+    console.error(`Missing required env var: ${key}`);
+    process.exit(1);
+  }
+}
+
 import './game/headless.js';
 
 esbuild.context({
