@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { launch, getStream, wss } from 'puppeteer-stream';
 import fs from 'fs';
 import { encodeSnapshot, encodeDelta, encodeEvent, type GameState } from "@/lib/netcode";
+import { completeMatch } from "@/lib/tournament";
 
 function GET() {
     const headers = new Headers();
@@ -434,6 +435,7 @@ async function createLobby(id: string) {
                     winner: 0,
                 }
             });
+            await completeMatch(id, 0);
             const endPacket0 = encodeEvent(seq++, 'end', { winner: 0 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket0);
             setTimeout(() => {
@@ -449,6 +451,7 @@ async function createLobby(id: string) {
                     winner: 1,
                 }
             });
+            await completeMatch(id, 1);
             const endPacket1 = encodeEvent(seq++, 'end', { winner: 1 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket1);
             setTimeout(() => {
