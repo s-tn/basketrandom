@@ -8,13 +8,13 @@ export function PingIndicator({ping, status}: {
 }) {
   // const [status, setStatus] = useState<"connected" | "connecting" | "disconnected">("connecting")
   const getStatusColor = () => {
+    if (status === "connecting") return "bg-gray-500"
     if (status === "disconnected") return "bg-red-500"
-    if (status === "connecting") return "bg-yellow-500"
 
     // Connected - color based on ping
     if (ping === null) return "bg-green-500"
-    if (ping < 50) return "bg-green-500"
-    if (ping < 100) return "bg-yellow-500"
+    if (ping < 80) return "bg-green-500"
+    if (ping < 150) return "bg-yellow-500"
     return "bg-red-500"
   }
 
