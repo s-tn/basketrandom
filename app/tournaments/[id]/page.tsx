@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BracketView } from "@/components/bracket-view"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 interface Participant {
   id: string
@@ -180,6 +181,7 @@ export default function TournamentDetailPage() {
   }
 
   return (
+    <ErrorBoundary>
     <div className="container py-8 max-w-4xl mx-auto space-y-6">
       {/* Back nav */}
       <Button
@@ -335,5 +337,6 @@ export default function TournamentDetailPage() {
         </Card>
       )}
     </div>
+    </ErrorBoundary>
   )
 }
