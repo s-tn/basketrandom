@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits, EmbedBuilder, TextChannel } from 'discord.js';
+import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
 
 let client: Client | null = null;
 let ready = false;
@@ -63,3 +64,53 @@ export async function notify(event: string, data: Record<string, any>) {
 }
 
 export function getDiscordClient() { return client; }
+
+let voiceConnection: any = null;
+let audioPlayer: any = null;
+
+export async function startVoiceStream(stream: any) {
+  if (!client || !ready) return;
+  const vcId = process.env.DISCORD_VOICE_CHANNEL_ID;
+  const channelId = process.env.DISCORD_CHANNEL_ID;
+  if (!vcId) return;
+
+  try {
+    // Find the guild from the text channel
+    const textChannel = channelId ? await client.channels.fetch(channelId) : null;
+    const guildId = (textChannel as any)?.guildId;
+    if (!guildId) return;
+
+    const guild = await client.guilds.fetch(guildId);
+
+    voiceConnection = joinVoiceChannel({
+      channelId: vcId,
+      guildId: guild.id,
+      adapterCreator: guild.voiceAdapterCreator as any,
+    });
+
+    audioPlayer = createAudioPlayer();
+    const resource = createAudioResource(stream);
+    audioPlayer.play(resource);
+    voiceConnection.subscribe(audioPlayer);
+
+    // Post link to Twitch in text channel if streaming there too
+    if (process.env.TWITCH_STREAM_KEY && channelId) {
+      await notify('match_started', { p0: 'Tournament', p1: 'Match Live' });
+    }
+  } catch (err) {
+    console.warn('Discord voice streaming failed:', err);
+  }
+}
+
+export function stopVoiceStream() {
+  try {
+    if (audioPlayer) {
+      audioPlayer.stop();
+      audioPlayer = null;
+    }
+    if (voiceConnection) {
+      voiceConnection.destroy();
+      voiceConnection = null;
+    }
+  } catch {}
+}

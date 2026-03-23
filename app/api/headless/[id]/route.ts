@@ -107,6 +107,12 @@ async function createLobby(id: string) {
                 startStreaming(stream).catch(() => {});
             } catch {}
         }
+
+        // Pipe to Discord voice channel if configured
+        if (stream && process.env.DISCORD_VOICE_CHANNEL_ID) {
+            const { startVoiceStream } = await import("@/lib/discord");
+            startVoiceStream(stream);
+        }
     }
 
     await page.evaluate(() => {
@@ -370,6 +376,8 @@ async function createLobby(id: string) {
         if (gamers.length === 0) {
             // Both disconnected — close everything
             clearInterval(disconnectCheck!);
+            const { stopVoiceStream } = await import("@/lib/discord");
+            stopVoiceStream();
             page.close().catch(() => {});
             delete lobbies[id];
             return;
@@ -434,7 +442,9 @@ async function createLobby(id: string) {
             await completeMatch(id, 0);
             const endPacket0 = encodeEvent(seq++, 'end', { winner: 0 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket0);
-            setTimeout(() => {
+            setTimeout(async () => {
+                const { stopVoiceStream } = await import("@/lib/discord");
+                stopVoiceStream();
                 page.close().catch(() => {});
                 delete lobbies[id];
                 clearInterval(disconnectCheck!);
@@ -450,7 +460,9 @@ async function createLobby(id: string) {
             await completeMatch(id, 1);
             const endPacket1 = encodeEvent(seq++, 'end', { winner: 1 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket1);
-            setTimeout(() => {
+            setTimeout(async () => {
+                const { stopVoiceStream } = await import("@/lib/discord");
+                stopVoiceStream();
                 page.close().catch(() => {});
                 delete lobbies[id];
                 clearInterval(disconnectCheck!);
