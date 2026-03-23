@@ -1,8 +1,8 @@
-import { enumerate, ping } from './util';
 import { getSockets } from './sockets';
 import { setup } from './setup';
-import { compress, decompress } from './compression';
-import { tick } from './tick';
+import { decodePacket, encodeInput, PACKET } from './protocol';
+import { createStateBuffer } from './interpolation';
+import { applyState } from './tick';
 import { anticheat } from './anticheat';
 
 document.getElementById('game').onload = () => {
@@ -13,7 +13,6 @@ document.getElementById('game').onload = () => {
             if (argumentsList[0] === 'start game called') {
                 setTimeout(() => start(), 500);
             }
-
             return Reflect.apply(target, thisArg, argumentsList);
         }
     });
@@ -21,7 +20,6 @@ document.getElementById('game').onload = () => {
 
 async function start() {
     let baseEndpoint;
-
     try {
         baseEndpoint = atob(location.hash.match(/#(.+)/)[1]);
     } catch(e) {
@@ -29,16 +27,14 @@ async function start() {
     }
 
     const cw = document.getElementById('game').contentWindow;
-
     await setup(cw);
-
     const comms = getSockets(baseEndpoint);
 
     ['in', 'out'].forEach((type) => {
-        comms[type].addEventListener('error', (event) => {
+        comms[type].addEventListener('error', () => {
             window.postMessage({ type: 'error', data: "Socket tunnel error, reconnecting..." }, '*');
         });
-        comms[type].addEventListener('close', (event) => {
+        comms[type].addEventListener('close', () => {
             window.postMessage({ type: 'error', data: "Socket tunnel closed, reconnecting..." }, '*');
         });
     });
@@ -47,12 +43,12 @@ async function start() {
         if (comms.in.readyState === WebSocket.OPEN) {
             comms.in.send(JSON.stringify({ type: 'ready' }));
         }
-    }
+    };
 
     window.unpause = function() {
         cw.c3_runtimeInterface._localRuntime.SetSuspended(false);
         document.querySelector('iframe').focus();
-    }
+    };
 
     addEventListener('c3:sound', ({detail: { sound }}) => {
         if (sound === "file") {
@@ -61,242 +57,105 @@ async function start() {
         }
     });
 
-    const keys = {
-        w: false,
-        up: false
+    const stateBuffer = createStateBuffer();
+    let gameStarted = false;
+
+    function renderLoop() {
+        if (gameStarted) {
+            const interpolated = stateBuffer.interpolate();
+            if (interpolated) {
+                applyState(cw, interpolated);
+                window.postMessage({ type: 'score', data: [interpolated.score0, interpolated.score1] }, '*');
+            }
+        }
+        requestAnimationFrame(renderLoop);
     }
+
+    comms.in.binaryType = 'arraybuffer';
 
     cw.c3_runtimeInterface._localRuntime.Tick = new Proxy(cw.c3_runtimeInterface._localRuntime.Tick, {
         apply: function(target, thisArg, argumentsList) {
-            let e = target.apply(thisArg, argumentsList);
-            try {tick(cw, keys);} catch(e) {console.log('tick error', e)};
-            return e;
+            return target.apply(thisArg, argumentsList);
         }
     });
-    
-    cw.addEventListener('basket-key', (event) => {
-        if (event.detail.type === 'keydown') {
-            if (event.detail.key === 'w') {
-                keys.w = true;
-            } else if (event.detail.key === 'ArrowUp') {
-                keys.up = true;
-            }
-        } else if (event.detail.type === 'keyup') {
-            if (event.detail.key === 'w') {
-                keys.w = false;
-            } else if (event.detail.key === 'ArrowUp') {
-                keys.up = false;
-            }
-        }
-    
-        comms.out.send(JSON.stringify({ type: 'key', event: event.detail.type, key: event.detail.key }));
 
+    cw.addEventListener('basket-key', (event) => {
+        const { key, type } = event.detail;
+        const playerIndex = key === 'ArrowUp' ? 0 : 1;
+        const action = type === 'keydown' ? 1 : 0;
+        const inputPacket = encodeInput(playerIndex, action, performance.now());
+        if (comms.out.readyState === WebSocket.OPEN) {
+            comms.out.send(inputPacket);
+        }
         window.dispatchEvent(new event.constructor(event.type, event));
     });
-    
-    let currentId = 0;
+
     let pingInterval = null;
-    
     comms.out.addEventListener('open', () => {
-        console.log('WebSocket connection established');
-    
-        if (pingInterval) {
-            clearInterval(pingInterval);
-        }
-    
+        if (pingInterval) clearInterval(pingInterval);
         pingInterval = setInterval(() => {
-            ping(comms.out).then((ping) => {
-                window.postMessage({ type: 'ping', data: ping, scores: [document.querySelector('iframe').contentWindow.savedGlobalVars.p1Score, document.querySelector('iframe').contentWindow.savedGlobalVars.p2Score] }, '*');
-            });
-        }, 1000);
-    
-        currentId = 0;
-    });
-    
-    comms.in.addEventListener('message', (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'update') {
-                window.postMessage({ type: 'update', data: data.message }, '*');
+            if (comms.out.readyState === WebSocket.OPEN) {
+                const start = performance.now();
+                comms.out.send('ping');
+                const handler = (e) => {
+                    if (typeof e.data === 'string' && e.data === 'pong') {
+                        window.postMessage({ type: 'ping', data: Math.round(performance.now() - start) }, '*');
+                        comms.out.removeEventListener('message', handler);
+                    }
+                };
+                comms.out.addEventListener('message', handler);
             }
-        } catch(e) {}
-    
-        if (event.data === 'loaded') {
-            window.postMessage({ type: 'loaded' }, '*');
+        }, 1000);
+    });
+
+    comms.in.addEventListener('message', (event) => {
+        if (typeof event.data === 'string') {
+            if (event.data === 'loaded') {
+                window.postMessage({ type: 'loaded' }, '*');
+            }
+            if (event.data === 'start') {
+                window.postMessage({ type: 'start' }, '*');
+                if (!gameStarted) {
+                    gameStarted = true;
+                    requestAnimationFrame(renderLoop);
+                    comms.in.send(JSON.stringify({ type: 'ready' }));
+                }
+            }
+            if (event.data.startsWith('coin flipped: ')) {
+                const side = parseInt(event.data.split('coin flipped: ')[1]);
+                window.postMessage({ type: 'coinflip', phase: 'start' }, '*');
+                cw.flipCoin("1", "2", "idk", side, () => {
+                    window.postMessage({ type: 'coinflip', phase: 'end' }, '*');
+                });
+            }
+            return;
         }
-    
-        if (event.data === 'start') {
-            window.postMessage({ type: 'start' }, '*');
-    
-            if (!document.querySelector('iframe').contentWindow.started) comms.in.addEventListener('message', (event) => {
-                if (event.data.toString().startsWith('round[')) {
-                    const data = decompress(event.data.toString().replace(/^(end|round)\[/, ''));
 
-                    console.log(data);
-                    window.postMessage({ type: 'newround', data: data }, '*');
-
-                    return;
+        const packet = decodePacket(event.data);
+        switch (packet.type) {
+            case PACKET.SNAPSHOT:
+                stateBuffer.push(packet.state);
+                break;
+            case PACKET.DELTA: {
+                const latest = stateBuffer.latest;
+                if (latest) {
+                    stateBuffer.push({ ...latest, ...packet.changes });
                 }
-
-                if (event.data.toString().startsWith('end[')) {
-                    window.postMessage({ type: 'end', winner: parseInt(event.data.toString().match(/^end\[(\d)\]$/)[1]) }, '*');
-                    return;
+                break;
+            }
+            case PACKET.EVENT:
+                if (packet.event.type === 'end') {
+                    window.postMessage({ type: 'end', winner: packet.event.winner }, '*');
+                    gameStarted = false;
                 }
-
-                if (!event.data.toString().startsWith('update[')) {
-                    return;
+                if (packet.event.type === 'round') {
+                    window.postMessage({ type: 'newround', data: packet.event }, '*');
+                    gameStarted = false;
                 }
-                const data = decompress(event.data.toString().replace('update[', ''));
-    
-                if (data.id < currentId) {
-                    return;
-                }
-    
-                currentId = data.id;
-    
-                if (data.event === 'update') {
-                    document.querySelector('iframe').focus();
-                    (function(window) {
-                        if (data.globalVars) {
-                            if (window.savedGlobalVars) {
-                                if (window.savedGlobalVars.p1Score !== data.globalVars.p1Score) {
-                                    setTimeout(() => window.showBasket('blue'), 10);
-                                    
-                                }
-                                if (window.savedGlobalVars.p2Score !== data.globalVars.p2Score) {
-                                    setTimeout(() => window.showBasket('red'), 10);
-                                }
-                            }
-                            window.savedGlobalVars = data.globalVars || {
-                                p1Score: 0,
-                                p2Score: 0,
-                                goal: 0
-                            };
-                        }
-                        for (let [index, player] of enumerate(data.players)) {
-                            const playerInstance = window.players.find((p, i) => index === i);
-                            if (!playerInstance) {
-                                continue;
-                            }
-    
-                            ['x', 'y', 'angle'].forEach((key) => {
-                                const delta = Math.abs(player[key] - playerInstance[key]);
-    
-                                if (key === 'x' && delta > 0) {
-                                    //playerInstance.x = player.x;
-                                    playerInstance.savedX = player.x;
-                                    playerInstance.savedVelocity = player.velocity;
-                                    playerInstance.savedAngularVelocity = player.angularVelocity;
-                                }
-    
-                                if (key === 'y' && delta > 0) {
-                                    //playerInstance.y = player.y;
-                                    playerInstance.savedY = player.y;
-                                    playerInstance.savedVelocity = player.velocity;
-                                    playerInstance.savedAngularVelocity = player.angularVelocity;
-                                }
-    
-                                if (key === 'angle' && delta > (Math.PI / 90, 0)) {
-                                    //playerInstance.angle = player.angle;
-                                    playerInstance.savedAngle = player.angle;
-                                    playerInstance.savedVelocity = player.velocity;
-                                    playerInstance.savedAngularVelocity = player.angularVelocity;
-                                }
-                            });
-    
-                            for (let [key, value] of Object.entries(player.instVars)) {
-                                playerInstance.instVars[key] = value;
-                            }
-                        }
-            
-                        for (let [index, head] of enumerate(data.heads)) {
-                            continue;
-                            const headInstance = window.heads.find((p, i) => index === i);
-                            if (!headInstance) {
-                                continue;
-                            }
-    
-                            ['x', 'y', 'angle'].forEach((key) => {
-                                const delta = Math.abs(head[key] - headInstance[key]);
-    
-                                if (key === 'y' && delta > 1) {
-                                    headInstance.y = head.y;
-                                    headInstance.savedY = head.y;
-                                    headInstance.savedVelocity = head.velocity;
-                                }
-    
-                                if (key === 'angle' && delta > (Math.PI / 180, 0)) {
-                                    headInstance.angle = head.angle;
-                                    headInstance.savedAngle = head.angle;
-                                    headInstance.savedVelocity = head.velocity;
-                                }
-    
-                                if (key === 'x' && delta > 0) {
-                                    //headInstance.x = head.x;
-                                    headInstance.savedX = head.x;
-                                    headInstance.savedVelocity = head.velocity;
-                                }
-                            });
-
-                            //headInstance.behaviors.Physics.setVelocity(0, 0);
-                            headInstance.behaviors.Physics.angularVelocity = 0;
-    
-                            for (let [key, value] of Object.entries(head.instVars)) {
-                                headInstance.instVars[key] = value;
-                            }
-                        }
-    
-                        for (let [index, arm] of enumerate(data.arms)) {
-                            const armInstance = window.arms.find((p, i) => index === i);
-                            if (!armInstance) {
-                                continue;
-                            }
-                            
-                            ['x', 'y', 'angle'].forEach((key) => {
-                                const delta = Math.abs(arm[key] - armInstance[key]);
-    
-                                if (key === 'x' && delta > 0) {
-                                    //armInstance.x = arm.x;
-                                    armInstance.savedX = arm.x;
-                                    armInstance.savedVelocity = arm.velocity;
-                                }
-    
-                                if (key === 'y' && delta > 0) {
-                                    //armInstance.y = arm.y;
-                                    armInstance.savedY = arm.y;
-                                    armInstance.savedVelocity = arm.velocity;
-                                }
-    
-                                if (key === 'angle' && delta > (Math.PI / 180, 0)) {
-                                    //armInstance.angle = arm.angle;
-                                    armInstance.savedAngle = arm.angle;
-                                    armInstance.savedVelocity = arm.velocity;
-                                }
-                            });
-    
-                            for (let [key, value] of Object.entries(arm.instVars)) {
-                                armInstance.instVars[key] = value;
-                            }
-                        }
-            
-                        const ballInstance = window.ball;
-                        //ballInstance.x = data.ball.x;
-                        //ballInstance.y = data.ball.y;
-                        ballInstance.savedX = data.ball.x;
-                        ballInstance.savedY = data.ball.y;
-                        ballInstance.savedVelocity = data.ball.velocity;
-                        for (let [key, value] of Object.entries(data.ball.instVars)) {
-                            ballInstance.instVars[key] = value;
-                        }
-                        ballInstance.savedInstVars = data.ball.instVars || {};
-                    })(document.querySelector('iframe').contentWindow);
-                }
-            });
-            document.querySelector('iframe').contentWindow.started = true;
-            comms.in.send(JSON.stringify({ type: 'ready' }));
-        } else return false;
+                break;
+        }
     });
 
     await comms.connected;
-    window.postMessage({type: "ready"}, '*');
+    window.postMessage({ type: 'ready' }, '*');
 }
