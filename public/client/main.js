@@ -6,6 +6,7 @@ import { applyState } from './tick';
 import { anticheat } from './anticheat';
 import { createClipper } from './clipper';
 import { setupTouchControls } from './touch';
+import { createDrawer } from './drawer';
 import { playGoalSound, playCountdownBeep, playGoBeep, playMatchEnd } from './sounds';
 
 document.getElementById('game').onload = () => {
@@ -32,6 +33,7 @@ async function start() {
     const cw = document.getElementById('game').contentWindow;
     await setup(cw);
     setupTouchControls(cw);
+    const drawer = createDrawer(cw);
 
     let clipper = null;
     try {
@@ -43,6 +45,13 @@ async function start() {
     } catch {}
 
     const comms = getSockets(baseEndpoint);
+
+    setInterval(() => {
+        const segments = drawer.flush();
+        if (segments && comms.out.readyState === WebSocket.OPEN) {
+            comms.out.send(JSON.stringify({ type: 'draw', segments }));
+        }
+    }, 50); // 20Hz sync rate for drawings
 
     ['in', 'out'].forEach((type) => {
         comms[type].addEventListener('error', () => {
@@ -93,6 +102,16 @@ async function start() {
         if (e.data?.type === 'side-pick') {
             // Parent sent the winner's side choice — relay to server
             comms.in.send(JSON.stringify({ type: 'side-pick', side: e.data.side }));
+        }
+        if (e.data?.type === 'toggleDraw') {
+            const isActive = drawer.toggle();
+            window.postMessage({ type: 'drawActive', active: isActive }, '*');
+        }
+        if (e.data?.type === 'clearDraw') {
+            drawer.clear();
+        }
+        if (e.data?.type === 'drawColor') {
+            drawer.setColor(e.data.color);
         }
     });
 
@@ -189,6 +208,9 @@ async function start() {
                         side: json.side,
                         round: json.round,
                     }, '*');
+                }
+                if (json.type === 'draw-remote') {
+                    drawer.applyRemote(json.segments);
                 }
             } catch {}
             return;

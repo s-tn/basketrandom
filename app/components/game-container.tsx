@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
 import { Button } from "./ui/button"
-import { ArrowBigUp, Fullscreen, Scissors } from "lucide-react"
+import { ArrowBigUp, Fullscreen, Pencil, Scissors } from "lucide-react"
 import { ClipToast } from "./clip-toast"
 import { Separator } from "@radix-ui/react-dropdown-menu"
 import GameResult from "./game-result"
@@ -32,6 +32,7 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   const [score, setScore] = useState<[number, number]>([0, 0])
   const [clipBlob, setClipBlob] = useState<Blob | null>(null);
   const [clipAuto, setClipAuto] = useState(false);
+  const [drawActive, setDrawActive] = useState(false);
   const [showSidePick, setShowSidePick] = useState(false);
   const [mySide, setMySide] = useState<string | null>(null);
   const [coinFlipWinner, setCoinFlipWinner] = useState<string | null>(null);
@@ -131,6 +132,9 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           setClipBlob(event.data.blob);
           setClipAuto(event.data.auto);
           setTimeout(() => setClipBlob(null), 8000);
+        }
+        if (event.data.type === 'drawActive') {
+          setDrawActive(event.data.active);
         }
         if (event.data.type === 'score') {
           setScore(event.data.data);
@@ -310,6 +314,16 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
                 title="Clip last 10s"
               >
                 <Scissors className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                    const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
+                    iframe?.contentWindow?.postMessage({ type: 'toggleDraw' }, '*');
+                }}
+                className={"border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out " + (drawActive ? "bg-primary" : "hover:bg-primary/50")}
+                title="Toggle drawing overlay"
+              >
+                <Pencil className="w-4 h-4" />
               </button>
               <div onClick={toggleFullscreen} className={"border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out hover:bg-primary/50"}>
                 <Fullscreen className="text-white" />

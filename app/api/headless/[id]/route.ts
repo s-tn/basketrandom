@@ -395,7 +395,7 @@ async function createLobby(id: string) {
                             }
                         }
 
-                        // Handle JSON messages (legacy/side-pick)
+                        // Handle JSON messages (legacy/side-pick/draw)
                         try {
                             const data = JSON.parse(message.toString());
                             if (data.type === 'key') {
@@ -407,6 +407,14 @@ async function createLobby(id: string) {
                                 }
                                 if (data.event === 'keyup') {
                                     await browser.page.keyboard.up(key);
+                                }
+                            }
+                            if (data.type === 'draw') {
+                                // Broadcast drawing segments to all stream sockets in this lobby
+                                for (const gamer of gamers) {
+                                    if (gamer.readyState === 1) {
+                                        gamer.send(JSON.stringify({ type: 'draw-remote', segments: data.segments }));
+                                    }
                                 }
                             }
                         } catch {}
