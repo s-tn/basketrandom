@@ -52,7 +52,7 @@ model TournamentParticipant {
   losses       Int        @default(0)
   joinedAt     DateTime   @default(now())
 
-  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   matchesAsP0  TournamentMatch[] @relation("MatchPlayer0")
   matchesAsP1  TournamentMatch[] @relation("MatchPlayer1")
   matchesWon   TournamentMatch[] @relation("MatchWinner")
@@ -69,7 +69,7 @@ model TournamentMatch {
   winnerId     String?
   status       String     @default("pending")
 
-  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   room         Room?      @relation(fields: [roomId], references: [id])
   player0      TournamentParticipant? @relation("MatchPlayer0", fields: [player0Id], references: [id])
   player1      TournamentParticipant? @relation("MatchPlayer1", fields: [player1Id], references: [id])

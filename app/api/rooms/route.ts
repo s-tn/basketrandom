@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma"
 import { notify } from "@/lib/discord"
 
 export async function GET() {
-    return new Response(JSON.stringify(await prisma.room.findMany()), {
+    return new Response(JSON.stringify(await prisma.room.findMany({ where: { private: false } })), {
         headers: { "Content-Type": "application/json" },
     })
 }

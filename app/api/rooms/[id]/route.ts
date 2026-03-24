@@ -1,11 +1,7 @@
 import prisma from "@/lib/prisma"
 
-export async function DELETE(request: Request) {
-    const id = request.url.match(/\/api\/rooms\/(.*)/)?.[1]
-
-    if (!id) {
-        return new Response("Room ID not provided", { status: 400 })
-    }
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
 
     // Check if the room exists
     const room = await prisma.room.findUnique({

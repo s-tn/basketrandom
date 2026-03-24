@@ -10,7 +10,7 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 COPY . .
 RUN npx prisma generate
 RUN npx next build

@@ -118,10 +118,6 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
 
     if (!socket) return setSocket(new ReconnectingWebSocket(`/api/lobby/${roomId}`));
 
-    socket.close = () => {
-      return;
-    }
-
     socket.onopen = () => {
       setStatus("connected");
       setPing(0);

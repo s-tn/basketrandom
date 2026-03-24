@@ -19,6 +19,7 @@ function lerpState(a, b, t) {
   const angleFields = [
     'p0angle', 'p0armAngle',
     'p1angle', 'p1armAngle',
+    'ballAngle',
   ];
 
   const discreteFields = ['ballHolder', 'score0', 'score1', 'flags'];
