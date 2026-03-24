@@ -6,6 +6,7 @@ import { applyState } from './tick';
 import { anticheat } from './anticheat';
 import { createClipper } from './clipper';
 import { setupTouchControls } from './touch';
+import { playGoalSound, playCountdownBeep, playGoBeep, playMatchEnd } from './sounds';
 
 document.getElementById('game').onload = () => {
     const cw = document.getElementById('game').contentWindow;
@@ -71,6 +72,7 @@ async function start() {
                 const blob = clipper.trigger();
                 if (blob) window.postMessage({ type: 'clip', blob, auto: true }, '*');
             }
+            playGoalSound();
         }
     });
 
@@ -81,6 +83,12 @@ async function start() {
         }
         if (e.data?.type === 'clipDuration' && clipper) {
             clipper.setDuration(e.data.duration);
+        }
+        if (e.data?.type === 'countdown-beep') {
+            playCountdownBeep();
+        }
+        if (e.data?.type === 'countdown-go') {
+            playGoBeep();
         }
         if (e.data?.type === 'side-pick') {
             // Parent sent the winner's side choice — relay to server
@@ -200,6 +208,7 @@ async function start() {
             }
             case PACKET.EVENT:
                 if (packet.event.type === 'end') {
+                    playMatchEnd();
                     window.postMessage({ type: 'end', winner: packet.event.winner }, '*');
                     gameStarted = false;
                 }

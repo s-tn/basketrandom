@@ -189,7 +189,13 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
 
           for (let i = 1; i < 4; i ++) {
             setCountdown(3 - i);
-            await new Promise((resolve) => setTimeout(resolve, 1000)); 
+            const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
+            if (3 - i > 0) {
+              iframe?.contentWindow?.postMessage({ type: 'countdown-beep' }, '*');
+            } else {
+              iframe?.contentWindow?.postMessage({ type: 'countdown-go' }, '*');
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
 
           setCountdown(-1);
