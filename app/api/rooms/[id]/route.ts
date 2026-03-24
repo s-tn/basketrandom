@@ -1,5 +1,22 @@
 import prisma from "@/lib/prisma"
 
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+
+    const room = await prisma.room.findUnique({ where: { id } })
+    if (!room) {
+        return new Response(JSON.stringify({ error: "Room not found" }), {
+            headers: { "Content-Type": "application/json" },
+            status: 404,
+        })
+    }
+
+    return new Response(JSON.stringify(room), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+    })
+}
+
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
 

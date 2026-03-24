@@ -318,14 +318,16 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
               </div>
 
               <div className="p-3 text-sm border rounded-md bg-muted/50">
-                <p>Share this room ID with a friend to play together:</p>
+                <p>Share this invite link with a friend to play together:</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <code className="px-2 py-1 font-mono rounded bg-background">{room.id}</code>
+                  <code className="flex-1 px-2 py-1 font-mono rounded bg-background truncate text-xs">
+                    {typeof window !== "undefined" ? `${window.location.origin}/rooms/join/${room.id}` : `/rooms/join/${room.id}`}
+                  </code>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      navigator.clipboard.writeText(room.id)
+                      navigator.clipboard.writeText(`${window.location.origin}/rooms/join/${room.id}`)
                     }}
                   >
                     Copy
