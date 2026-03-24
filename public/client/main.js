@@ -5,6 +5,7 @@ import { createStateBuffer } from './interpolation';
 import { applyState } from './tick';
 import { anticheat } from './anticheat';
 import { createClipper } from './clipper';
+import { setupTouchControls } from './touch';
 
 document.getElementById('game').onload = () => {
     const cw = document.getElementById('game').contentWindow;
@@ -29,6 +30,7 @@ async function start() {
 
     const cw = document.getElementById('game').contentWindow;
     await setup(cw);
+    setupTouchControls(cw);
 
     let clipper = null;
     try {
