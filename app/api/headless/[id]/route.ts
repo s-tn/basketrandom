@@ -25,6 +25,38 @@ type SocketListener = (client: any) => void;
 const socketListeners: SocketListener[] = [];
 
 let browserPromise: Promise<Browser> | null = null;
+let browserEventsBound = false;
+let signalHandlersBound = false;
+
+// Track active pages for zombie detection
+const activePages: Map<string, { page: any; createdAt: number; lobbyId: string }> = new Map();
+
+// Max concurrent games
+const MAX_PAGES = parseInt(process.env.MAX_GAME_PAGES || '10');
+
+// Expose health metrics globally for /api/health
+function updateHealth() {
+    (globalThis as any).__gameHealth = {
+        activePages: activePages.size,
+        maxPages: MAX_PAGES,
+        lobbies: Object.keys(lobbies).length,
+    };
+}
+setInterval(updateHealth, 5000);
+
+// Zombie page cleanup: kill pages older than 30 minutes with no active gamers
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, info] of activePages) {
+        const age = now - info.createdAt;
+        if (age > 30 * 60 * 1000) { // 30 min max game length
+            console.warn(`Zombie page detected: ${id} (age: ${Math.round(age / 60000)}m), closing`);
+            info.page.close().catch(() => {});
+            activePages.delete(id);
+            delete lobbies[id];
+        }
+    }
+}, 60000); // Check every minute
 
  async function SOCKET(
     client: import("ws").WebSocket,
@@ -100,9 +132,42 @@ async function createLobby(id: string) {
 
     const clients: () => any[] = () => [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
 
-    console.log('Starting game in lobby:', id);
+    // Check page limit
+    if (activePages.size >= MAX_PAGES) {
+        console.warn(`Page limit reached (${MAX_PAGES}), rejecting lobby: ${id}`);
+        clients().forEach(c => c.send(JSON.stringify({ type: 'error', message: 'Server full, try again later' })));
+        delete lobbies[id];
+        return;
+    }
+
+    console.log(`Starting game in lobby: ${id} (active pages: ${activePages.size + 1}/${MAX_PAGES})`);
     const browser = await run();
     const page = browser.page;
+
+    // Track this page
+    activePages.set(id, { page, createdAt: Date.now(), lobbyId: id });
+
+    // Centralized cleanup function — ensures nothing leaks
+    let cleaned = false;
+    function cleanupGame() {
+        if (cleaned) return;
+        cleaned = true;
+        activePages.delete(id);
+        delete lobbies[id];
+        if (disconnectCheck) clearInterval(disconnectCheck);
+        // Remove socket listener
+        const lIdx = socketListeners.indexOf(onNewSocketSubscribe);
+        if (lIdx !== -1) socketListeners.splice(lIdx, 1);
+        // Destroy server clipper
+        if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
+        // Close page
+        page.close().catch(() => {});
+        console.log(`Game cleaned up: ${id} (active pages: ${activePages.size}/${MAX_PAGES})`);
+    }
+    // Declare variables that cleanupGame references (will be assigned later)
+    let disconnectCheck: ReturnType<typeof setInterval> | null = null;
+    let onNewSocketSubscribe: SocketListener = () => {};
+    let serverClipper: any = null;
 
     // Enable streaming for tournament matches only
     let stream: any = null;
@@ -130,7 +195,6 @@ async function createLobby(id: string) {
         }
     }
 
-    let serverClipper: any = null;
     if (stream) {
         const createClipper = await getServerClipper();
         serverClipper = createClipper(stream, id);
@@ -562,7 +626,7 @@ async function createLobby(id: string) {
         }
     }
 
-    const onNewSocketSubscribe = (newClient: any) => {
+    onNewSocketSubscribe = (newClient: any) => {
         if (newClient.lobbyId === id)
             subscribe(newClient);
     };
@@ -607,7 +671,6 @@ async function createLobby(id: string) {
         startTimeLimitTimer();
     }
 
-    let disconnectCheck: ReturnType<typeof setInterval> | null = null;
     let disconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
     disconnectCheck = setInterval(async () => {
@@ -617,42 +680,25 @@ async function createLobby(id: string) {
         const activePlayers = gamers.filter(g => !g.isSpectator);
 
         if (activePlayers.length === 0) {
-            // Both disconnected — close everything
-            clearInterval(disconnectCheck!);
-            try {
-                const { stopVoiceStream } = await import("@/lib/discord");
-                stopVoiceStream();
-            } catch {}
-            const lIdx = socketListeners.indexOf(onNewSocketSubscribe);
-            if (lIdx !== -1) socketListeners.splice(lIdx, 1);
-            if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
-            page.close().catch(() => {});
-            delete lobbies[id];
+            try { const { stopVoiceStream } = await import("@/lib/discord"); stopVoiceStream(); } catch {}
+            cleanupGame();
             return;
         }
 
         if (activePlayers.length < requiredPlayers && !paused && !disconnectTimeout) {
-            // One player disconnected — pause and wait
             pause();
             gamers.forEach(g => g.send(JSON.stringify({ type: 'opponent-disconnected' })));
 
             disconnectTimeout = setTimeout(() => {
-                // 30 seconds passed, no reconnect — forfeit
                 if (gamers.filter(g => !g.isSpectator && g.readyState === 1).length < requiredPlayers) {
                     const remaining = gamers.find(g => !g.isSpectator && g.readyState === 1);
                     if (remaining) {
-                        // Determine which player the remaining one is
                         const remainingIndex = clients().indexOf(remaining);
                         const winnerIdx = remainingIndex === 0 ? 0 : 1;
                         const forfeitPacket = encodeEvent(seq++, 'end', { winner: winnerIdx });
                         for (const g of gamers) if (g.readyState === 1) g.send(forfeitPacket);
                     }
-                    clearInterval(disconnectCheck!);
-                    const lIdx2 = socketListeners.indexOf(onNewSocketSubscribe);
-                    if (lIdx2 !== -1) socketListeners.splice(lIdx2, 1);
-                    if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
-                    setTimeout(() => page.close().catch(() => {}), 2000);
-                    delete lobbies[id];
+                    setTimeout(() => cleanupGame(), 2000);
                 }
                 disconnectTimeout = null;
             }, 30000);
@@ -704,14 +750,8 @@ async function createLobby(id: string) {
             const endPacket0 = encodeEvent(seq++, 'end', { winner: 0 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket0);
             setTimeout(async () => {
-                const { stopVoiceStream } = await import("@/lib/discord");
-                stopVoiceStream();
-                const lIdx3 = socketListeners.indexOf(onNewSocketSubscribe);
-                if (lIdx3 !== -1) socketListeners.splice(lIdx3, 1);
-                if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
-                page.close().catch(() => {});
-                delete lobbies[id];
-                clearInterval(disconnectCheck!);
+                try { const { stopVoiceStream } = await import("@/lib/discord"); stopVoiceStream(); } catch {}
+                cleanupGame();
             }, 5000);
         }
         else if (newRoom.wins1 === newRoom.roundGoal) {
@@ -735,14 +775,8 @@ async function createLobby(id: string) {
             const endPacket1 = encodeEvent(seq++, 'end', { winner: 1 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket1);
             setTimeout(async () => {
-                const { stopVoiceStream } = await import("@/lib/discord");
-                stopVoiceStream();
-                const lIdx4 = socketListeners.indexOf(onNewSocketSubscribe);
-                if (lIdx4 !== -1) socketListeners.splice(lIdx4, 1);
-                if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
-                page.close().catch(() => {});
-                delete lobbies[id];
-                clearInterval(disconnectCheck!);
+                try { const { stopVoiceStream } = await import("@/lib/discord"); stopVoiceStream(); } catch {}
+                cleanupGame();
             }, 5000);
         } else {
             currentRound++;
@@ -912,7 +946,23 @@ const run = async () => {
         browserPromise = launch({
                 headless: process.env.HEADLESS !== 'false' ? 'new' : false,
                 executablePath: exec,
-                args: ['--enable-automation', '--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-infobars', '--disable-dev-shm-usage', '--disable-web-security', '--allow-file-access-from-files'],
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-software-rasterizer',
+                    '--disable-extensions',
+                    '--disable-background-networking',
+                    '--disable-default-apps',
+                    '--disable-sync',
+                    '--disable-translate',
+                    '--disable-web-security',
+                    '--allow-file-access-from-files',
+                    '--js-flags=--max-old-space-size=128',
+                    '--renderer-process-limit=4',
+                    '--single-process',
+                ],
                 ignoreDefaultArgs: ['--enable-logging', '--v=1'],
                 defaultViewport: {
                     width: 640,
@@ -921,53 +971,37 @@ const run = async () => {
             });
     }
     const browser = await browserPromise;
-    browser.on('disconnected', () => {
-        console.log('Browser disconnected');
-        sockets.forEach((socket) => {
-            socket.close();
+
+    // Only bind browser events once (not per page)
+    if (!browserEventsBound) {
+        browserEventsBound = true;
+        browser.on('disconnected', () => {
+            console.log('Browser disconnected');
+            browserPromise = null;
+            browserEventsBound = false;
+            // Clean up all active pages
+            for (const [lid, info] of activePages) {
+                info.page.close().catch(() => {});
+                delete lobbies[lid];
+            }
+            activePages.clear();
         });
-        browserPromise = null;
-    });
-    browser.on('close', () => {
-        console.log('Browser closed');
-        sockets.forEach((socket) => {
-            socket.close();
-        });
-        browserPromise = null;
-    });
-    browser.on('targetdestroyed', (target) => {
-        console.log('Target destroyed:', target.url());
-    });
+    }
+
     const page = await browser.newPage();
     await page.goto('http://localhost:9001/');
 
-    process.on('SIGINT', async () => {
-        console.log('SIGINT received, closing browser...');
-        try {
-            await browser.close();
-        } catch (err) {
-            console.error('Error closing browser:', err);
-        }
-        process.exit(0);
-    });
-    process.on('SIGTERM', async () => {
-        console.log('SIGTERM received, closing browser...');
-        try {
-            await browser.close();
-        } catch (err) {
-            console.error('Error closing browser:', err);
-        }
-        process.exit(0);
-    });
-    process.on('exit', async () => {
-        console.log('Exit received, closing browser...');
-        try {
-            await browser.close();
-        } catch (err) {
-            console.error('Error closing browser:', err);
-        }
-        process.exit(0);
-    });
+    // Only bind signal handlers once
+    if (!signalHandlersBound) {
+        signalHandlersBound = true;
+        const shutdown = async () => {
+            console.log('Shutting down browser...');
+            try { await browser.close(); } catch {}
+            process.exit(0);
+        };
+        process.on('SIGINT', shutdown);
+        process.on('SIGTERM', shutdown);
+    }
 
     await new Promise(res => setTimeout(res, 2000));
 
