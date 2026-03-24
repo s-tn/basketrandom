@@ -71,7 +71,13 @@ async function start() {
         requestAnimationFrame(renderLoop);
     }
 
-    comms.in.binaryType = 'arraybuffer';
+    comms.in.addEventListener('open', () => {
+        comms.in.binaryType = 'arraybuffer';
+        if (gameStarted) {
+            comms.in.send(JSON.stringify({ type: 'ready' }));
+            window.postMessage({ type: 'update', data: 'Reconnected, syncing...' }, '*');
+        }
+    });
 
     cw.c3_runtimeInterface._localRuntime.Tick = new Proxy(cw.c3_runtimeInterface._localRuntime.Tick, {
         apply: function(target, thisArg, argumentsList) {
