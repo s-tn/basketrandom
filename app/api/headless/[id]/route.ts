@@ -19,6 +19,9 @@ function GET() {
 const lobbies: Record<string, Array<any>> = {};
 const sockets: any[] = [];
 
+type SocketListener = (client: any) => void;
+const socketListeners: SocketListener[] = [];
+
 let browserPromise: Promise<Browser> | null = null;
 
  async function SOCKET(
@@ -33,6 +36,10 @@ let browserPromise: Promise<Browser> | null = null;
     (client as any).id = randomUUID();
     (client as any).ready = false;
     sockets.push(client);
+
+    for (const listener of socketListeners) {
+        listener(client);
+    }
 
     client.addEventListener('close', () => {
         const idx = sockets.indexOf(client);
@@ -265,20 +272,15 @@ async function createLobby(id: string) {
 
     await pause();
 
-    const _push = sockets.push;
-
     clients().forEach(client => {
         client.send('loaded');
     });
 
-    sockets.push = new Proxy(_push, {
-        apply: (target, thisArg, argumentsList) => {
-            const result = target.apply(thisArg, argumentsList);
-            if (argumentsList[0].lobbyId === id && argumentsList[0].type === 'stream')
-                argumentsList[0].send('loaded');
-            return result;
-        }
-    });
+    const onNewSocket = (newClient: any) => {
+        if (newClient.lobbyId === id && newClient.type === 'stream')
+            newClient.send('loaded');
+    };
+    socketListeners.push(onNewSocket);
 
     await new Promise<void>((resolve) => {
         let int = setInterval(() => {
@@ -341,14 +343,14 @@ async function createLobby(id: string) {
         }
     }
 
-    sockets.push = new Proxy(_push, {
-        apply: (target, thisArg, argumentsList) => {
-            const result = target.apply(thisArg, argumentsList);
-            if (argumentsList[0].lobbyId === id)
-                subscribe(argumentsList[0]);
-            return result;
-        }
-    });
+    const onNewSocketSubscribe = (newClient: any) => {
+        if (newClient.lobbyId === id)
+            subscribe(newClient);
+    };
+    // Replace the loaded listener with the subscribe listener
+    const idx = socketListeners.indexOf(onNewSocket);
+    if (idx !== -1) socketListeners[idx] = onNewSocketSubscribe;
+    else socketListeners.push(onNewSocketSubscribe);
 
     [...sockets].forEach(client => {
         subscribe(client);
@@ -382,6 +384,8 @@ async function createLobby(id: string) {
                 const { stopVoiceStream } = await import("@/lib/discord");
                 stopVoiceStream();
             } catch {}
+            const lIdx = socketListeners.indexOf(onNewSocketSubscribe);
+            if (lIdx !== -1) socketListeners.splice(lIdx, 1);
             page.close().catch(() => {});
             delete lobbies[id];
             return;
@@ -404,6 +408,8 @@ async function createLobby(id: string) {
                         for (const g of gamers) if (g.readyState === 1) g.send(forfeitPacket);
                     }
                     clearInterval(disconnectCheck!);
+                    const lIdx2 = socketListeners.indexOf(onNewSocketSubscribe);
+                    if (lIdx2 !== -1) socketListeners.splice(lIdx2, 1);
                     setTimeout(() => page.close().catch(() => {}), 2000);
                     delete lobbies[id];
                 }
@@ -449,6 +455,8 @@ async function createLobby(id: string) {
             setTimeout(async () => {
                 const { stopVoiceStream } = await import("@/lib/discord");
                 stopVoiceStream();
+                const lIdx3 = socketListeners.indexOf(onNewSocketSubscribe);
+                if (lIdx3 !== -1) socketListeners.splice(lIdx3, 1);
                 page.close().catch(() => {});
                 delete lobbies[id];
                 clearInterval(disconnectCheck!);
@@ -467,6 +475,8 @@ async function createLobby(id: string) {
             setTimeout(async () => {
                 const { stopVoiceStream } = await import("@/lib/discord");
                 stopVoiceStream();
+                const lIdx4 = socketListeners.indexOf(onNewSocketSubscribe);
+                if (lIdx4 !== -1) socketListeners.splice(lIdx4, 1);
                 page.close().catch(() => {});
                 delete lobbies[id];
                 clearInterval(disconnectCheck!);
