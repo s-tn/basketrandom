@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { notify } from "@/lib/discord";
+const notify = (event: string, data: Record<string, any>) => import("@/lib/discord").then(m => m.notify(event, data)).catch(() => {});
 
 export async function GET() {
   const tournaments = await prisma.tournament.findMany({

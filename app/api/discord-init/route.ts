@@ -1,12 +1,10 @@
-import { initDiscord } from "@/lib/discord";
-
-// Initialize Discord bot on first import
 let initialized = false;
-if (!initialized) {
-  initDiscord();
-  initialized = true;
-}
 
-export function GET() {
+export async function GET() {
+  if (!initialized) {
+    const { initDiscord } = await import("@/lib/discord");
+    initDiscord();
+    initialized = true;
+  }
   return new Response("ok");
 }

@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { notify } from "@/lib/discord"
+const notify = (event: string, data: Record<string, any>) => import("@/lib/discord").then(m => m.notify(event, data)).catch(() => {})
 
 export async function GET() {
     return new Response(JSON.stringify(await prisma.room.findMany({ where: { private: false } })), {

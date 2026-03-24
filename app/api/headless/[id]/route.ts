@@ -8,7 +8,8 @@ const puppeteerStream = () => import('puppeteer-stream');
 import fs from 'fs';
 import { encodeSnapshot, encodeDelta, encodeEvent, type GameState } from "@/lib/netcode";
 import { completeMatch } from "@/lib/tournament";
-import { createServerClipper } from "@/lib/server-clipper";
+// Dynamic import to avoid build-time issues
+const getServerClipper = () => import("@/lib/server-clipper").then(m => m.createServerClipper);
 
 function GET() {
     const headers = new Headers();
@@ -125,9 +126,10 @@ async function createLobby(id: string) {
         }
     }
 
-    let serverClipper: ReturnType<typeof createServerClipper> | null = null;
+    let serverClipper: any = null;
     if (stream) {
-        serverClipper = createServerClipper(stream, id);
+        const createClipper = await getServerClipper();
+        serverClipper = createClipper(stream, id);
     }
 
     await page.evaluate(() => {
