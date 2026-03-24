@@ -95,6 +95,15 @@ model Clip {
   room      Room     @relation(fields: [roomId], references: [id])
 }
 
+model Friendship {
+  id        String   @id @default(cuid())
+  player1   String
+  player2   String
+  createdAt DateTime @default(now())
+
+  @@unique([player1, player2])
+}
+
 model Player {
   id        String   @id @default(cuid())
   name      String   @unique
