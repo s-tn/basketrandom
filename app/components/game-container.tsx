@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
 import { Button } from "./ui/button"
-import { ArrowBigUp, Fullscreen, Pencil, Scissors } from "lucide-react"
+import { ArrowBigUp, Fullscreen, MessageSquare, Pencil, Scissors } from "lucide-react"
 import { ClipToast } from "./clip-toast"
 import { Separator } from "@radix-ui/react-dropdown-menu"
 import GameResult from "./game-result"
 import ReconnectingWebSocket from "reconnecting-websocket"
+import { Chat } from "./chat"
 
 interface GameContainerProps {
   roomId: string
@@ -37,6 +38,8 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   const [mySide, setMySide] = useState<string | null>(null);
   const [coinFlipWinner, setCoinFlipWinner] = useState<string | null>(null);
   const [playerRole, setPlayerRole] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const playerNameRef = useRef<string>("");
   const [rematchRequested, setRematchRequested] = useState(false);
   const [rematchPending, setRematchPending] = useState(false);
 
@@ -48,6 +51,7 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
       promise: new Promise<void>(r => { resolveRef = r; }),
       resolve: () => resolveRef(),
     };
+    playerNameRef.current = localStorage.getItem("playerName") || players[0] || "";
   }, []);
 
   useEffect(() => {
@@ -340,6 +344,13 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
               >
                 <Pencil className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => setChatOpen(prev => !prev)}
+                className={"border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out " + (chatOpen ? "bg-primary" : "hover:bg-primary/50")}
+                title="Toggle chat"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
               <div onClick={toggleFullscreen} className={"border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out hover:bg-primary/50"}>
                 <Fullscreen className="text-white" />
               </div>
@@ -474,6 +485,12 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           <div className="flex items-center justify-center bg-black aspect-video">
             <iframe src={`/game.html#${btoa(ws)}`} className="w-full h-full" title="Game" id="game-frame"></iframe>
           </div>
+          {/* In-game chat overlay */}
+          {chatOpen && lobbySocket && (
+            <div className="absolute bottom-3 left-3 z-30">
+              <Chat socket={lobbySocket} playerName={playerNameRef.current} compact />
+            </div>
+          )}
         </CardContent>
       </Card>
       <ClipToast
