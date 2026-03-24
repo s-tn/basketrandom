@@ -166,3 +166,21 @@ model SeasonReward {
   badge      String
   awardedAt  DateTime @default(now())
 }
+
+model Wallet {
+  id         String   @id @default(cuid())
+  playerName String   @unique
+  balance    Int      @default(1000)
+}
+
+model Bet {
+  id              String   @id @default(cuid())
+  roomId          String
+  playerName      String
+  predictedWinner Int
+  amount          Int
+  resolved        Boolean  @default(false)
+  won             Boolean?
+  payout          Int?
+  createdAt       DateTime @default(now())
+}

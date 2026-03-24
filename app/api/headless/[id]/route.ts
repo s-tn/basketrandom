@@ -691,6 +691,7 @@ async function createLobby(id: string) {
                 }
             });
             await completeMatch(id, 0);
+            { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 0); }
             if (replayBuffer.length > 0) {
                 prisma.replay.create({
                     data: {
@@ -721,6 +722,7 @@ async function createLobby(id: string) {
                 }
             });
             await completeMatch(id, 1);
+            { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 1); }
             if (replayBuffer.length > 0) {
                 prisma.replay.create({
                     data: {
