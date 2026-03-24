@@ -6,9 +6,9 @@ const onlinePlayers: Map<string, { lastSeen: number; roomId?: string }> = new Ma
 // Cleanup stale entries every 30 seconds
 setInterval(() => {
   const now = Date.now();
-  for (const [name, data] of onlinePlayers) {
+  onlinePlayers.forEach((data, name) => {
     if (now - data.lastSeen > 30000) onlinePlayers.delete(name);
-  }
+  });
 }, 30000);
 
 // POST — heartbeat (player is online)

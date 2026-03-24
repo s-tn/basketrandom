@@ -47,15 +47,15 @@ setInterval(updateHealth, 5000);
 // Zombie page cleanup: kill pages older than 30 minutes with no active gamers
 setInterval(() => {
     const now = Date.now();
-    for (const [id, info] of activePages) {
+    activePages.forEach((info, pageId) => {
         const age = now - info.createdAt;
-        if (age > 30 * 60 * 1000) { // 30 min max game length
-            console.warn(`Zombie page detected: ${id} (age: ${Math.round(age / 60000)}m), closing`);
+        if (age > 30 * 60 * 1000) {
+            console.warn(`Zombie page detected: ${pageId} (age: ${Math.round(age / 60000)}m), closing`);
             info.page.close().catch(() => {});
-            activePages.delete(id);
-            delete lobbies[id];
+            activePages.delete(pageId);
+            delete lobbies[pageId];
         }
-    }
+    });
 }, 60000); // Check every minute
 
  async function SOCKET(
@@ -980,10 +980,10 @@ const run = async () => {
             browserPromise = null;
             browserEventsBound = false;
             // Clean up all active pages
-            for (const [lid, info] of activePages) {
+            activePages.forEach((info, lid) => {
                 info.page.close().catch(() => {});
                 delete lobbies[lid];
-            }
+            });
             activePages.clear();
         });
     }
