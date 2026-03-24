@@ -37,6 +37,8 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   const [mySide, setMySide] = useState<string | null>(null);
   const [coinFlipWinner, setCoinFlipWinner] = useState<string | null>(null);
   const [playerRole, setPlayerRole] = useState<string | null>(null);
+  const [rematchRequested, setRematchRequested] = useState(false);
+  const [rematchPending, setRematchPending] = useState(false);
 
   const gameLoadedRef = useRef<{ promise: Promise<void>; resolve: () => void }>({ promise: Promise.resolve(), resolve: () => {} });
 
@@ -62,6 +64,12 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
       (lobbySocket as any)._onmessage = (event: MessageEvent) => {
         if (event.data === "pong") return;
         const data = JSON.parse(event.data);
+        if (data.type === 'rematch-request') {
+          setRematchPending(true);
+        }
+        if (data.type === 'rematch-room') {
+          window.location.href = `/rooms/${data.roomId}`;
+        }
         if (data.type === "room-info") {
           const rounds = JSON.parse(data.data.rounds);
 
@@ -411,8 +419,55 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           }
           {
             over &&
-            <div className="absolute inset-0 bg-black opacity-85 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center gap-6 z-10">
               <span className="text-white text-4xl">{winner === 0 ? players[0] : players[1]} wins!</span>
+              {rematchPending && !rematchRequested ? (
+                <div className="flex flex-col items-center gap-3">
+                  <span className="text-white text-lg">Opponent wants rematch!</span>
+                  <div className="flex gap-4">
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        lobbySocket?.send(JSON.stringify({ type: 'rematch-accept' }));
+                      }}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() => {
+                        setRematchPending(false);
+                      }}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              ) : rematchRequested ? (
+                <span className="text-white/70 text-base">Waiting for opponent...</span>
+              ) : (
+                <div className="flex gap-4">
+                  <Button
+                    size="lg"
+                    onClick={() => {
+                      setRematchRequested(true);
+                      lobbySocket?.send(JSON.stringify({ type: 'rematch-request' }));
+                    }}
+                  >
+                    Rematch
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => {
+                      window.location.href = '/rooms';
+                    }}
+                  >
+                    Back to Lobby
+                  </Button>
+                </div>
+              )}
             </div>
           }
           {/* Game iframe */}

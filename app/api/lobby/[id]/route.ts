@@ -110,6 +110,48 @@ export async function SOCKET(
             }));
           });
         }
+        if (data.type === 'chat') {
+          // Broadcast to all clients in this lobby
+          const lobbyClients = sockets.filter((s: any) => s.id === id);
+          for (const c of lobbyClients) {
+            if (c.readyState === 1) {
+              c.send(JSON.stringify(data));
+            }
+          }
+        }
+        if (data.type === 'rematch-request') {
+          const lobbyClients = sockets.filter((s: any) => s.id === id && s !== client);
+          for (const lobbyClient of lobbyClients) {
+            if (lobbyClient.readyState === 1) {
+              lobbyClient.send(JSON.stringify({ type: 'rematch-request' }));
+            }
+          }
+        }
+        if (data.type === 'rematch-accept') {
+          const currentRoom = await prisma.room.findUnique({ where: { id } });
+          if (currentRoom) {
+            const newId = Math.random().toString(36).substring(2, 10);
+            await prisma.room.create({
+              data: {
+                id: newId,
+                name: currentRoom.name + ' (Rematch)',
+                host: currentRoom.host,
+                opponent: currentRoom.opponent,
+                scoreMax: currentRoom.scoreMax,
+                roundGoal: currentRoom.roundGoal,
+                mode: currentRoom.mode,
+                gravity: currentRoom.gravity,
+                timeLimit: currentRoom.timeLimit,
+              },
+            });
+            const lobbyClients = sockets.filter((s: any) => s.id === id);
+            for (const lobbyClient of lobbyClients) {
+              if (lobbyClient.readyState === 1) {
+                lobbyClient.send(JSON.stringify({ type: 'rematch-room', roomId: newId }));
+              }
+            }
+          }
+        }
       }
     });
   
