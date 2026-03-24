@@ -3,12 +3,26 @@ import "./globals.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { ServiceWorkerRegister } from "@/components/sw-register"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
   title: "Basket Random",
   description: "Create or join basketball courts to play with other ballers",
+  manifest: '/manifest.json',
+  themeColor: '#FF6B35',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent' as const,
+    title: 'Basket Random',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 }
 
 export default function RootLayout({
@@ -26,6 +40,7 @@ export default function RootLayout({
             </div>
             <main>{children}</main>
           </div>
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>

@@ -12,6 +12,8 @@
   },
   "type": "module",
   "dependencies": {
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
     "@discordjs/voice": "^0.18.0",
     "@flydotio/litestream": "^1.0.1",
     "@prisma/client": "^6.6.0",
