@@ -121,3 +121,36 @@ model Achievement {
 
   @@unique([playerName, achieveId])
 }
+
+model Season {
+  id        String   @id @default(cuid())
+  number    Int      @unique
+  startDate DateTime
+  endDate   DateTime
+  active    Boolean  @default(true)
+
+  standings SeasonStanding[]
+}
+
+model SeasonStanding {
+  id           String @id @default(cuid())
+  seasonId     String
+  playerName   String
+  wins         Int    @default(0)
+  losses       Int    @default(0)
+  goalsFor     Int    @default(0)
+  goalsAgainst Int    @default(0)
+
+  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonId, playerName])
+}
+
+model SeasonReward {
+  id         String   @id @default(cuid())
+  seasonNum  Int
+  playerName String
+  title      String
+  badge      String
+  awardedAt  DateTime @default(now())
+}

@@ -103,6 +103,14 @@ export default function Home() {
         >
           Strategy Board
         </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          className="px-8 border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+          onClick={() => (window.location.href = "/friends")}
+        >
+          Friends
+        </Button>
       </div>
     </div>
   )

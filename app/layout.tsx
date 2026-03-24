@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ServiceWorkerRegister } from "@/components/sw-register"
+import { OnlineHeartbeat } from "@/components/online-heartbeat"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -41,6 +42,7 @@ export default function RootLayout({
             <main>{children}</main>
           </div>
           <ServiceWorkerRegister />
+          <OnlineHeartbeat />
         </ThemeProvider>
       </body>
     </html>
