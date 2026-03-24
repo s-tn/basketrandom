@@ -41,25 +41,52 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     )
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id: routeId } = await params;
     // Parse the incoming request body
     const data = await request.json()
 
-    const { id, createdBy: host, name, players, started } = data;
+    const { id: bodyId, createdBy: host, name, players, started, opponent, player3, player4, leave } = data;
+    const roomId = routeId || bodyId;
 
-    await prisma.room.update({
-        where: { id }, // Specify the room to update by ID
-        data: {
-            name, // Update the name of the room
-            host, // Update the host if necessary
-            opponent: players && players.length > 1 ? players[1] : null, // Update the opponent if provided
-            started, // Reset the started status
-        },
+    // Handle leave
+    if (leave) {
+        const room = await prisma.room.findUnique({ where: { id: roomId } });
+        if (!room) return new Response(JSON.stringify({ error: "Room not found" }), { status: 404 });
+        const updateData: any = {};
+        if (room.player4 === leave) updateData.player4 = null;
+        else if (room.player3 === leave) updateData.player3 = null;
+        else if (room.opponent === leave) updateData.opponent = null;
+        const updated = await prisma.room.update({ where: { id: roomId }, data: updateData });
+        return new Response(JSON.stringify(updated), { headers: { "Content-Type": "application/json" }, status: 200 });
+    }
+
+    // Handle join (opponent, player3, player4)
+    if (opponent !== undefined || player3 !== undefined || player4 !== undefined) {
+        const updateData: any = {};
+        if (opponent !== undefined) updateData.opponent = opponent;
+        if (player3 !== undefined) updateData.player3 = player3;
+        if (player4 !== undefined) updateData.player4 = player4;
+        const updated = await prisma.room.update({ where: { id: roomId }, data: updateData });
+        return new Response(JSON.stringify(updated), { headers: { "Content-Type": "application/json" }, status: 200 });
+    }
+
+    // Handle full update (start game, etc.)
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (host !== undefined) updateData.host = host;
+    if (started !== undefined) updateData.started = started;
+    if (players && players.length > 1) updateData.opponent = players[1];
+    if (players && players.length > 2) updateData.player3 = players[2];
+    if (players && players.length > 3) updateData.player4 = players[3];
+
+    const updated = await prisma.room.update({
+        where: { id: roomId },
+        data: updateData,
     })
 
-    // Respond with a success message indicating update
     return new Response(
-        JSON.stringify({ success: true }),
+        JSON.stringify(updated),
         {
             headers: { "Content-Type": "application/json" },
             status: 200,

@@ -3,6 +3,9 @@ export interface Room {
   name: string
   host: string
   opponent: string | null
+  player3: string | null
+  player4: string | null
+  mode: string
   players: string[]
   createdAt: number
   scoreMax: number
@@ -25,4 +28,5 @@ export interface CreateRoomParams {
   roundGoal: number
   tournament: boolean
   tPassword: string
+  mode?: string
 }

@@ -8,7 +8,10 @@ function toRoom(r: any): Room {
     name: r.name,
     host: r.host,
     opponent: r.opponent || null,
-    players: [r.host, r.opponent].filter(Boolean) as string[],
+    player3: r.player3 || null,
+    player4: r.player4 || null,
+    mode: r.mode || '1v1',
+    players: [r.host, r.opponent, r.player3, r.player4].filter(Boolean) as string[],
     createdAt: r.createdAt instanceof Date ? r.createdAt.getTime() : new Date(r.createdAt).getTime(),
     scoreMax: r.scoreMax,
     roundGoal: r.roundGoal,
@@ -75,10 +78,28 @@ export const createRoom = async (params: CreateRoomParams): Promise<string> => {
 export const joinRoom = async (roomId: string, playerName: string): Promise<void> => {
   if (typeof window === "undefined") return
 
+  // Fetch current room state to determine which slot to fill
+  const room = await getRoomById(roomId)
+  if (!room) throw new Error('Room not found')
+
+  // Don't re-join if already in the room
+  if (room.players.includes(playerName)) return
+
+  let joinData: any = {};
+  if (!room.opponent) {
+    joinData.opponent = playerName;
+  } else if (room.mode === '2v2' && !room.player3) {
+    joinData.player3 = playerName;
+  } else if (room.mode === '2v2' && !room.player4) {
+    joinData.player4 = playerName;
+  } else {
+    throw new Error('Room is full');
+  }
+
   const res = await fetch(`/api/rooms/${roomId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ opponent: playerName }),
+    body: JSON.stringify(joinData),
   })
   if (!res.ok) throw new Error('Failed to join room')
 

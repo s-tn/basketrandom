@@ -36,6 +36,7 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   const [showSidePick, setShowSidePick] = useState(false);
   const [mySide, setMySide] = useState<string | null>(null);
   const [coinFlipWinner, setCoinFlipWinner] = useState<string | null>(null);
+  const [playerRole, setPlayerRole] = useState<string | null>(null);
 
   const gameLoadedRef = useRef<{ promise: Promise<void>; resolve: () => void }>({ promise: Promise.resolve(), resolve: () => {} });
 
@@ -181,6 +182,12 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
             ? `You are on the ${event.data.side}!`
             : `Sides swapped! You are now on the ${event.data.side}!`);
           setTimeout(() => setMessage(""), 2000);
+        }
+        if (event.data.type === 'role-assigned') {
+          const roleDisplay = event.data.role.replace('team', 'Team ').replace('-', ' ');
+          setPlayerRole(roleDisplay);
+          setMessage(`You are: ${roleDisplay}`);
+          setTimeout(() => setMessage(""), 3000);
         }
 
         if (event.data.type === 'loaded') {

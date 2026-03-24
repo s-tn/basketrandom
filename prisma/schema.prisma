@@ -18,7 +18,10 @@ model Room {
   wins0     Int      @default(0)
   wins1     Int      @default(0)
   started   Boolean  @default(false)
+  mode      String   @default("1v1")
   scoreMax  Int      @default(10)
+  player3   String?
+  player4   String?
   tournament Boolean @default(false)
   private   Boolean  @default(false)
   score0    Int      @default(0)

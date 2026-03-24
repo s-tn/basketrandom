@@ -73,16 +73,6 @@ let browserPromise: Promise<Browser> | null = null;
 }
 
 async function createLobby(id: string) {
-    const twoPlayers = new Promise<any[]>((resolve) => {
-        const interval = setInterval(() => {
-            const clients = [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
-            if (clients.length === 2) {
-                clearInterval(interval);
-                resolve(clients);
-            }
-        }, 500);
-    });
-
     const roomInfo = () => prisma.room.findUnique({
         where: { id },
     });
@@ -92,7 +82,21 @@ async function createLobby(id: string) {
         return;
     }
 
-    await twoPlayers;
+    const initialRoomData = await roomInfo();
+    const is2v2 = initialRoomData?.mode === '2v2';
+    const requiredPlayers = is2v2 ? 4 : 2;
+
+    const playersReady = new Promise<any[]>((resolve) => {
+        const interval = setInterval(() => {
+            const clients = [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
+            if (clients.length === requiredPlayers) {
+                clearInterval(interval);
+                resolve(clients);
+            }
+        }, 500);
+    });
+
+    await playersReady;
 
     const clients: () => any[] = () => [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
 
@@ -150,6 +154,20 @@ async function createLobby(id: string) {
     clients().forEach((cli) => {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
     });
+
+    // 2v2 role assignment
+    const roles: Record<string, string> = {};
+    if (is2v2) {
+        const streamClients = clients();
+        roles[streamClients[0]?.id] = 'team1-jumper';
+        roles[streamClients[1]?.id] = 'team1-arm';
+        roles[streamClients[2]?.id] = 'team2-jumper';
+        roles[streamClients[3]?.id] = 'team2-arm';
+
+        streamClients.forEach(client => {
+            client.send(JSON.stringify({ type: 'role-assigned', role: roles[client.id] }));
+        });
+    }
 
     let paused = false;
 
@@ -278,6 +296,56 @@ async function createLobby(id: string) {
 
     console.log(`Game started in lobby: ${id}`);
 
+    // Inject arm control override for 2v2 mode
+    if (is2v2) {
+        await page.evaluate(() => {
+            const win = window as any;
+            // Override arm behavior: ArrowLeft controls team1 arms, ArrowRight controls team2 arms
+            win._armOverride = { left: false, right: false };
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') win._armOverride.left = true;
+                if (e.key === 'ArrowRight') win._armOverride.right = true;
+            });
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowLeft') win._armOverride.left = false;
+                if (e.key === 'ArrowRight') win._armOverride.right = false;
+            });
+
+            // Override the arm rotation in the game tick
+            const ARM_SPEED = (Math.PI * (190 / 180)) / 0.35 / 60;
+
+            const origTick = win.c3_runtimeInterface._localRuntime.Tick;
+            win.c3_runtimeInterface._localRuntime.Tick = new Proxy(origTick, {
+                apply: (target: any, thisArg: any, args: any[]) => {
+                    const result = target.apply(thisArg, args);
+
+                    // Team 1 arms (arm, arm2)
+                    const arm0 = win.arms[0];
+                    const arm1 = win.arms[1];
+                    if (arm0 && win._armOverride.left) {
+                        arm0.angle += ARM_SPEED / 60;
+                    }
+                    if (arm1 && win._armOverride.left) {
+                        arm1.angle += ARM_SPEED / 60;
+                    }
+
+                    // Team 2 arms (arm3, arm4)
+                    const arm2 = win.arms[2];
+                    const arm3 = win.arms[3];
+                    if (arm2 && win._armOverride.right) {
+                        arm2.angle -= ARM_SPEED / 60;
+                    }
+                    if (arm3 && win._armOverride.right) {
+                        arm3.angle -= ARM_SPEED / 60;
+                    }
+
+                    return result;
+                }
+            });
+        });
+    }
+
     await pause();
 
     clients().forEach(client => {
@@ -292,53 +360,58 @@ async function createLobby(id: string) {
 
     await new Promise<void>((resolve) => {
         let int = setInterval(() => {
-            if (clients().filter(cli => cli.ready).length >= 2) {
-                console.log('Both clients are ready, starting game');
+            if (clients().filter(cli => cli.ready).length >= requiredPlayers) {
+                console.log('All clients are ready, starting game');
                 resolve();
                 clearInterval(int);
             }
         }, 100);
     });
 
-    // Coin flip: winner picks their side (left/right)
-    // clients()[0] = host (player who created room), clients()[1] = opponent
-    const flipWinnerIdx = Math.random() < 0.5 ? 0 : 1;
-    const flipClients = clients();
-
     // Side mapping: which client controls which game side
     // left = ArrowUp (player 0 in C3), right = W (player 1 in C3)
     let clientSideMap: Record<string, 'left' | 'right'> = {};
     let currentRound = 0;
+    let flipWinnerIdx = 0;
+    let flipClients = clients();
+    let sideChoice = 'left';
 
-    // Send coin flip result to both clients with player names
-    const room = await roomInfo();
-    const playerNames = [room.host, room.opponent || 'Player 2'];
-    flipClients.forEach((client, i) => {
-        client.send(JSON.stringify({
-            type: 'coinflip',
-            winner: flipWinnerIdx,
-            winnerName: playerNames[flipWinnerIdx],
-            youWon: i === flipWinnerIdx,
-            players: playerNames,
-        }));
-    });
+    if (!is2v2) {
+        // Coin flip: winner picks their side (left/right)
+        // clients()[0] = host (player who created room), clients()[1] = opponent
+        flipWinnerIdx = Math.random() < 0.5 ? 0 : 1;
+        flipClients = clients();
 
-    // Wait for winner to pick a side
-    const sideChoice: string = await new Promise((resolve) => {
-        const winnerClient = flipClients[flipWinnerIdx];
-        const handler = (message: any) => {
-            try {
-                const data = JSON.parse(message.toString());
-                if (data.type === 'side-pick' && (data.side === 'left' || data.side === 'right')) {
-                    winnerClient.removeListener('message', handler);
-                    resolve(data.side);
-                }
-            } catch {}
-        };
-        winnerClient.on('message', handler);
-        // Timeout: default to left after 15 seconds
-        setTimeout(() => resolve('left'), 15000);
-    });
+        // Send coin flip result to both clients with player names
+        const room = await roomInfo();
+        const playerNames = [room.host, room.opponent || 'Player 2'];
+        flipClients.forEach((client, i) => {
+            client.send(JSON.stringify({
+                type: 'coinflip',
+                winner: flipWinnerIdx,
+                winnerName: playerNames[flipWinnerIdx],
+                youWon: i === flipWinnerIdx,
+                players: playerNames,
+            }));
+        });
+
+        // Wait for winner to pick a side
+        sideChoice = await new Promise((resolve) => {
+            const winnerClient = flipClients[flipWinnerIdx];
+            const handler = (message: any) => {
+                try {
+                    const data = JSON.parse(message.toString());
+                    if (data.type === 'side-pick' && (data.side === 'left' || data.side === 'right')) {
+                        winnerClient.removeListener('message', handler);
+                        resolve(data.side);
+                    }
+                } catch {}
+            };
+            winnerClient.on('message', handler);
+            // Timeout: default to left after 15 seconds
+            setTimeout(() => resolve('left'), 15000);
+        });
+    }
 
     // Assign sides based on winner's choice
     function assignSides(winnerSide: string, round: number) {
@@ -361,10 +434,15 @@ async function createLobby(id: string) {
         });
     }
 
-    assignSides(sideChoice, 0);
-
-    // Wait for animation to finish
-    await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+    if (!is2v2) {
+        assignSides(sideChoice, 0);
+        // Wait for animation to finish
+        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+    } else {
+        // In 2v2, sides are fixed: team 1 = left, team 2 = right
+        // Just wait a moment then proceed
+        await new Promise<void>(r => setTimeout(r, 2000));
+    }
 
     let gamers: any[] = [];
 
@@ -381,15 +459,27 @@ async function createLobby(id: string) {
                             if (buf.length >= 11 && buf.readUInt8(0) === 0x03) {
                                 // Binary input: [type][seq4][ts4][playerIdx][action]
                                 const action = buf.readUInt8(10); // 0=release, 1=press
+                                let key: string;
 
-                                // Map client to their assigned side's key
-                                const side = clientSideMap[client.id];
-                                const key = side === 'left' ? 'ArrowUp' : 'w';
+                                if (is2v2) {
+                                    const role = roles[client.id];
+                                    switch (role) {
+                                        case 'team1-jumper': key = 'ArrowUp'; break;
+                                        case 'team1-arm': key = 'ArrowLeft'; break;
+                                        case 'team2-jumper': key = 'w'; break;
+                                        case 'team2-arm': key = 'ArrowRight'; break;
+                                        default: return;
+                                    }
+                                } else {
+                                    // 1v1: use side map (existing logic)
+                                    const side = clientSideMap[client.id];
+                                    key = side === 'left' ? 'ArrowUp' : 'w';
+                                }
 
                                 if (action === 1) {
-                                    await browser.page.keyboard.down(key);
+                                    await browser.page.keyboard.down(key as any);
                                 } else {
-                                    await browser.page.keyboard.up(key);
+                                    await browser.page.keyboard.up(key as any);
                                 }
                                 return;
                             }
@@ -399,14 +489,25 @@ async function createLobby(id: string) {
                         try {
                             const data = JSON.parse(message.toString());
                             if (data.type === 'key') {
-                                // Legacy: map based on side assignment
-                                const side = clientSideMap[client.id];
-                                const key = side === 'left' ? 'ArrowUp' : 'w';
+                                let key: string;
+                                if (is2v2) {
+                                    const role = roles[client.id];
+                                    switch (role) {
+                                        case 'team1-jumper': key = 'ArrowUp'; break;
+                                        case 'team1-arm': key = 'ArrowLeft'; break;
+                                        case 'team2-jumper': key = 'w'; break;
+                                        case 'team2-arm': key = 'ArrowRight'; break;
+                                        default: return;
+                                    }
+                                } else {
+                                    const side = clientSideMap[client.id];
+                                    key = side === 'left' ? 'ArrowUp' : 'w';
+                                }
                                 if (data.event === 'keydown') {
-                                    await browser.page.keyboard.down(key);
+                                    await browser.page.keyboard.down(key as any);
                                 }
                                 if (data.event === 'keyup') {
-                                    await browser.page.keyboard.up(key);
+                                    await browser.page.keyboard.up(key as any);
                                 }
                             }
                             if (data.type === 'draw') {
@@ -484,14 +585,14 @@ async function createLobby(id: string) {
             return;
         }
 
-        if (gamers.length < 2 && !paused && !disconnectTimeout) {
+        if (gamers.length < requiredPlayers && !paused && !disconnectTimeout) {
             // One player disconnected — pause and wait
             pause();
             gamers.forEach(g => g.send(JSON.stringify({ type: 'opponent-disconnected' })));
 
             disconnectTimeout = setTimeout(() => {
                 // 30 seconds passed, no reconnect — forfeit
-                if (gamers.filter(g => g.readyState === 1).length < 2) {
+                if (gamers.filter(g => g.readyState === 1).length < requiredPlayers) {
                     const remaining = gamers.find(g => g.readyState === 1);
                     if (remaining) {
                         // Determine which player the remaining one is
@@ -511,7 +612,7 @@ async function createLobby(id: string) {
             }, 30000);
         }
 
-        if (gamers.length >= 2 && disconnectTimeout) {
+        if (gamers.length >= requiredPlayers && disconnectTimeout) {
             // Player reconnected — cancel forfeit timer and resume
             clearTimeout(disconnectTimeout);
             disconnectTimeout = null;
@@ -605,8 +706,8 @@ async function createLobby(id: string) {
                             client.waitingRound = true;
                         }
                     });
-                    if (clients().filter(cli => cli.ready && !cli.waitingRound).length >= 2) {
-                        console.log('Both clients are ready, starting game');
+                    if (clients().filter(cli => cli.ready && !cli.waitingRound).length >= requiredPlayers) {
+                        console.log('All clients are ready, starting game');
                         clients().forEach(client => {
                             client.send('start');
                         });

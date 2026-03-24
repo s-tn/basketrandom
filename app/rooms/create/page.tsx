@@ -33,6 +33,7 @@ export default function CreateRoomPage() {
       roundGoal: parseInt(e.currentTarget.bestof[1].value, 10) || 1,
       tournament: e.currentTarget.tournament[1].checked,
       tPassword: tPassword,
+      mode: e.currentTarget.gameMode[1].value || '1v1',
     }).then((room) => {
       if (room) {
         window.location.href = `/rooms/${room}`
@@ -113,6 +114,19 @@ export default function CreateRoomPage() {
                     {num}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="gameMode">Game Mode</Label>
+            <Select required name="gameMode" defaultValue="1v1">
+              <SelectTrigger id="gameMode" className="w-full border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30">
+                <SelectValue placeholder="Choose mode..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1v1">1v1 (2 players)</SelectItem>
+                <SelectItem value="2v2">2v2 (4 players - 2 per team)</SelectItem>
               </SelectContent>
             </Select>
           </div>
