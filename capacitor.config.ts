@@ -1,6 +1,4 @@
-import type { CapacitorConfig } from '@capacitor/core';
-
-const config: CapacitorConfig = {
+const config = {
   appId: 'com.basketrandom.app',
   appName: 'Basket Random',
   webDir: 'out',
