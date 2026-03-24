@@ -548,6 +548,16 @@ async function createLobby(id: string) {
 
                     gamers.push(client);
                     break;
+                case 'spectator':
+                    // Spectators receive game state but can't send inputs
+                    client.send('start');
+                    (client as any).isSpectator = true;
+                    gamers.push(client);
+                    // Send current state snapshot immediately so they see live state
+                    if (lastState) {
+                        client.send(encodeSnapshot(seq, lastState));
+                    }
+                    break;
             }
         }
     }
@@ -604,7 +614,9 @@ async function createLobby(id: string) {
         // Clean dead connections from gamers
         gamers = gamers.filter(g => g.readyState === 1); // WebSocket.OPEN = 1
 
-        if (gamers.length === 0) {
+        const activePlayers = gamers.filter(g => !g.isSpectator);
+
+        if (activePlayers.length === 0) {
             // Both disconnected — close everything
             clearInterval(disconnectCheck!);
             try {
@@ -619,15 +631,15 @@ async function createLobby(id: string) {
             return;
         }
 
-        if (gamers.length < requiredPlayers && !paused && !disconnectTimeout) {
+        if (activePlayers.length < requiredPlayers && !paused && !disconnectTimeout) {
             // One player disconnected — pause and wait
             pause();
             gamers.forEach(g => g.send(JSON.stringify({ type: 'opponent-disconnected' })));
 
             disconnectTimeout = setTimeout(() => {
                 // 30 seconds passed, no reconnect — forfeit
-                if (gamers.filter(g => g.readyState === 1).length < requiredPlayers) {
-                    const remaining = gamers.find(g => g.readyState === 1);
+                if (gamers.filter(g => !g.isSpectator && g.readyState === 1).length < requiredPlayers) {
+                    const remaining = gamers.find(g => !g.isSpectator && g.readyState === 1);
                     if (remaining) {
                         // Determine which player the remaining one is
                         const remainingIndex = clients().indexOf(remaining);
@@ -646,7 +658,7 @@ async function createLobby(id: string) {
             }, 30000);
         }
 
-        if (gamers.length >= requiredPlayers && disconnectTimeout) {
+        if (activePlayers.length >= requiredPlayers && disconnectTimeout) {
             // Player reconnected — cancel forfeit timer and resume
             clearTimeout(disconnectTimeout);
             disconnectTimeout = null;

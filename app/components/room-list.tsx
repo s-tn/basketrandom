@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -87,10 +88,15 @@ export function RoomList() {
               Room ID: <span className="font-mono">{room.id}</span>
             </p>
           </CardContent>
-          <CardFooter>
-            <Button onClick={() => handleJoinRoom(room.id)} className="w-full" disabled={room.players.length >= 2}>
+          <CardFooter className="flex gap-2">
+            <Button onClick={() => handleJoinRoom(room.id)} className="flex-1" disabled={room.players.length >= 2}>
               {room.players.length >= 2 ? "Room Full" : "Join Room"}
             </Button>
+            {room.started && (
+              <Button variant="outline" asChild>
+                <Link href={`/rooms/${room.id}/watch`}>Watch</Link>
+              </Button>
+            )}
           </CardFooter>
         </Card>
       ))}
