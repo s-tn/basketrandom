@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
 import { Button } from "./ui/button"
@@ -30,10 +30,15 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   const [winner, setWinner] = useState<number | null>(null);
   const [score, setScore] = useState<[number, number]>([0, 0]);
 
-  let res: any = () => {};
-  const gameLoaded = new Promise((resolve) => {
-    res = resolve;
-  });
+  const gameLoadedRef = useRef<{ promise: Promise<void>; resolve: () => void }>({ promise: Promise.resolve(), resolve: () => {} });
+
+  useEffect(() => {
+    let resolveRef: () => void = () => {};
+    gameLoadedRef.current = {
+      promise: new Promise<void>(r => { resolveRef = r; }),
+      resolve: () => resolveRef(),
+    };
+  }, []);
 
   useEffect(() => {
     // Simulate game loading
@@ -74,14 +79,16 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   }, [lobbySocket]);
 
   useEffect(() => {
-    const index = rounds.findIndex(round => round[3] === true && (round[1] !== score[0] || round[2] !== score[1]));
-    if (index !== -1) {
-      const newRounds = [...rounds];
+    setRounds(prevRounds => {
+      const index = prevRounds.findIndex(round => round[3] === true);
+      if (index === -1) return prevRounds;
+      if (prevRounds[index][1] === score[0] && prevRounds[index][2] === score[1]) return prevRounds;
+      const newRounds = prevRounds.map(r => [...r] as [null | number, number, number, boolean?]);
       newRounds[index][1] = score[0];
       newRounds[index][2] = score[1];
-      setRounds(newRounds);
-    }
-}, [score, rounds]);
+      return newRounds;
+    });
+  }, [score]);
 
   useEffect(() => {
     const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
@@ -123,7 +130,7 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
         }
 
         if (event.data.type === 'ready') {
-          res();
+          gameLoadedRef.current.resolve();
           return setMessage("Waiting on server...");
         }
 
@@ -132,7 +139,7 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           return setMessage(event.data.data);
         }
 
-        await gameLoaded;
+        await gameLoadedRef.current.promise;
 
         if (event.data.type === 'coinflip') {
           if (event.data.phase === 'start') {
