@@ -4,6 +4,7 @@ import { decodePacket, encodeInput, PACKET } from './protocol';
 import { createStateBuffer } from './interpolation';
 import { applyState } from './tick';
 import { anticheat } from './anticheat';
+import { createClipper } from './clipper';
 
 document.getElementById('game').onload = () => {
     const cw = document.getElementById('game').contentWindow;
@@ -28,6 +29,16 @@ async function start() {
 
     const cw = document.getElementById('game').contentWindow;
     await setup(cw);
+
+    let clipper = null;
+    try {
+        const gameCanvas = cw.document.querySelector('canvas');
+        if (gameCanvas) {
+            const clipDuration = parseInt(localStorage.getItem('clipDuration') || '10', 10);
+            clipper = createClipper(gameCanvas, clipDuration);
+        }
+    } catch {}
+
     const comms = getSockets(baseEndpoint);
 
     ['in', 'out'].forEach((type) => {
@@ -54,6 +65,20 @@ async function start() {
         if (sound === "file") {
             cw.globalVars.p1Score = 0;
             cw.globalVars.p2Score = 0;
+            if (clipper) {
+                const blob = clipper.trigger();
+                if (blob) window.postMessage({ type: 'clip', blob, auto: true }, '*');
+            }
+        }
+    });
+
+    window.addEventListener('message', (e) => {
+        if (e.data?.type === 'manualClip' && clipper) {
+            const blob = clipper.trigger();
+            if (blob) window.postMessage({ type: 'clip', blob, auto: false }, '*');
+        }
+        if (e.data?.type === 'clipDuration' && clipper) {
+            clipper.setDuration(e.data.duration);
         }
     });
 

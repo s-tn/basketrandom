@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PingIndicator } from "@/components/ping-indicator"
 import { Button } from "./ui/button"
-import { ArrowBigUp, Fullscreen } from "lucide-react"
+import { ArrowBigUp, Fullscreen, Scissors } from "lucide-react"
+import { ClipToast } from "./clip-toast"
 import { Separator } from "@radix-ui/react-dropdown-menu"
 import GameResult from "./game-result"
 import ReconnectingWebSocket from "reconnecting-websocket"
@@ -28,7 +29,9 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   const [rounds, setRounds] = useState<[null | number, number, number, boolean?][]>([]);
   const [over, setOver] = useState(false);
   const [winner, setWinner] = useState<number | null>(null);
-  const [score, setScore] = useState<[number, number]>([0, 0]);
+  const [score, setScore] = useState<[number, number]>([0, 0])
+  const [clipBlob, setClipBlob] = useState<Blob | null>(null);
+  const [clipAuto, setClipAuto] = useState(false);;
 
   const gameLoadedRef = useRef<{ promise: Promise<void>; resolve: () => void }>({ promise: Promise.resolve(), resolve: () => {} });
 
@@ -120,6 +123,14 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
               roomId,
             }));
           }
+        }
+        if (event.data.type === 'clip') {
+          setClipBlob(event.data.blob);
+          setClipAuto(event.data.auto);
+          setTimeout(() => setClipBlob(null), 8000);
+        }
+        if (event.data.type === 'score') {
+          setScore(event.data.data);
         }
         if (event.data.type === 'ping') {
           if (pingStatus !== "connected") {
@@ -265,6 +276,16 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
                 </div>
               </div>
               <span className="text-sm font-normal">Room: {roomId}</span>
+              <button
+                onClick={() => {
+                    const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
+                    iframe?.contentWindow?.postMessage({ type: 'manualClip' }, '*');
+                }}
+                className="border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out hover:bg-primary/50"
+                title="Clip last 10s"
+              >
+                <Scissors className="w-4 h-4" />
+              </button>
               <div onClick={toggleFullscreen} className={"border border-input cursor-pointer p-2 rounded-sm h-full transition duration-100 ease-in-out hover:bg-primary/50"}>
                 <Fullscreen className="text-white" />
               </div>
@@ -318,6 +339,13 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           </div>
         </CardContent>
       </Card>
+      <ClipToast
+          blob={clipBlob}
+          auto={clipAuto}
+          roomId={roomId}
+          playerName={players[0] || ''}
+          onDismiss={() => setClipBlob(null)}
+      />
     </div>
   )
 }
