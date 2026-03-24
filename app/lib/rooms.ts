@@ -14,6 +14,8 @@ function toRoom(r: any): Room {
     players: [r.host, r.opponent, r.player3, r.player4].filter(Boolean) as string[],
     createdAt: r.createdAt instanceof Date ? r.createdAt.getTime() : new Date(r.createdAt).getTime(),
     scoreMax: r.scoreMax,
+    gravity: r.gravity ?? 4,
+    timeLimit: r.timeLimit ?? 0,
     roundGoal: r.roundGoal,
     tournament: r.tournament,
     private: r.private || false,

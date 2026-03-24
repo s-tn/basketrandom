@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const data = await request.json()
 
     // Simulate processing time
-    const { id, host, name, scoreMax, roundGoal, tournament, tPassword, mode } = data;
+    const { id, host, name, scoreMax, roundGoal, gravity, timeLimit, tournament, tPassword, mode } = data;
 
     if (tournament && tPassword !== 'packets') {
         return new Response(
@@ -31,6 +31,8 @@ export async function POST(request: Request) {
             roundGoal: roundGoal || 3,
             tournament: tournament || false,
             scoreMax: scoreMax || 10,
+            gravity: gravity ?? 4,
+            timeLimit: timeLimit ?? 0,
             mode: mode || '1v1',
         },
     });

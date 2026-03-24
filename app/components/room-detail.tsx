@@ -9,6 +9,7 @@ import { getRoomById, getRooms, joinRoom, leaveRoom, subscribeToRoomUpdates } fr
 import type { Room } from "@/lib/types"
 import { GameContainer } from "@/components/game-container"
 import { PingIndicator } from "@/components/ping-indicator"
+import { Chat } from "@/components/chat"
 import ReconnectingWebSocket from 'reconnecting-websocket'
 
 interface RoomDetailProps {
@@ -281,6 +282,14 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
                 ? `Waiting for ${maxPlayers - room.players.length} more player${maxPlayers - room.players.length > 1 ? 's' : ''} to join...`
                 : `All ${maxPlayers} players are here!`}
             </CardDescription>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <Badge variant="secondary">Score to win: {room.scoreMax}</Badge>
+              <Badge variant="secondary">Best of: {room.roundGoal}</Badge>
+              <Badge variant="secondary">Gravity: {room.gravity ?? 4}</Badge>
+              <Badge variant="secondary">
+                {room.timeLimit > 0 ? `Time limit: ${room.timeLimit}s` : 'No time limit'}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -383,6 +392,9 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
               </div>
             </div>
           </CardContent>
+          <div className="px-6 pb-4">
+            <Chat socket={socket} playerName={playerName} />
+          </div>
           <CardFooter className="justify-between">
             <PingIndicator ping={ping} status={status} />
             {

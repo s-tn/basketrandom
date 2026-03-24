@@ -13,10 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createRoom } from "../../lib/rooms"
-import React from "react"
+import React, { useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function CreateRoomPage() {
+  const [gravity, setGravity] = useState(4);
+
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
@@ -29,8 +31,10 @@ export default function CreateRoomPage() {
     createRoom({
       name: e.currentTarget.courtName.value,
       host: e.currentTarget.playerName.value,
-      scoreMax: parseInt(e.currentTarget.score[1].value, 10) || 21,
+      scoreMax: parseInt(e.currentTarget.score[1].value, 10) || 10,
       roundGoal: parseInt(e.currentTarget.bestof[1].value, 10) || 1,
+      gravity: gravity,
+      timeLimit: parseInt(e.currentTarget.timeLimit[1].value, 10) || 0,
       tournament: e.currentTarget.tournament[1].checked,
       tPassword: tPassword,
       mode: e.currentTarget.gameMode[1].value || '1v1',
@@ -114,6 +118,41 @@ export default function CreateRoomPage() {
                     {num}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="gravity">Gravity: {gravity}</Label>
+            <input
+              id="gravity"
+              type="range"
+              min={0}
+              max={30}
+              step={1}
+              value={gravity}
+              onChange={(e) => setGravity(parseInt(e.target.value, 10))}
+              className="w-full accent-basketball-orange"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>0 (none)</span>
+              <span>4 (default)</span>
+              <span>30 (max)</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timeLimit">Time Limit per Round</Label>
+            <Select name="timeLimit" defaultValue="0">
+              <SelectTrigger id="timeLimit" className="w-full border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30">
+                <SelectValue placeholder="Choose..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">No limit</SelectItem>
+                <SelectItem value="30">30 seconds</SelectItem>
+                <SelectItem value="60">60 seconds</SelectItem>
+                <SelectItem value="90">90 seconds</SelectItem>
+                <SelectItem value="120">120 seconds</SelectItem>
               </SelectContent>
             </Select>
           </div>

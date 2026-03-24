@@ -265,6 +265,14 @@ async function createLobby(id: string) {
         });
     }, [info.score0, info.score1]);
 
+    // Apply custom gravity if different from default
+    if (info.gravity !== 4) {
+        await page.evaluate((gravityVal) => {
+            const win = window as any;
+            win.c3_runtimeInterface._localRuntime._pluginManager._allBehaviors[0].SetGravity(gravityVal);
+        }, info.gravity);
+    }
+
     const { width, height } = browser.page.viewport()!;
 
     await browser.page.mouse.move(width / 2, height / 2);
@@ -518,6 +526,14 @@ async function createLobby(id: string) {
                                     }
                                 }
                             }
+                            if (data.type === 'chat') {
+                                // Broadcast to all stream sockets in this lobby
+                                for (const gamer of gamers) {
+                                    if (gamer.readyState === 1) {
+                                        gamer.send(JSON.stringify(data));
+                                    }
+                                }
+                            }
                         } catch {}
                     });
                     break;
@@ -562,6 +578,24 @@ async function createLobby(id: string) {
     });
 
     await resume();
+
+    // Apply time limit per round if set
+    if (info.timeLimit > 0) {
+        for (const gamer of gamers) {
+            if (gamer.readyState === 1) {
+                gamer.send(JSON.stringify({ type: 'timelimit', seconds: info.timeLimit }));
+            }
+        }
+        const startTimeLimitTimer = () => setTimeout(async () => {
+            const state = lastState;
+            if (state && !paused) {
+                if (state.score0 > state.score1) await addRound(0);
+                else if (state.score1 > state.score0) await addRound(1);
+                // Tie: sudden death — let play continue until next goal
+            }
+        }, info.timeLimit * 1000);
+        startTimeLimitTimer();
+    }
 
     let disconnectCheck: ReturnType<typeof setInterval> | null = null;
     let disconnectTimeout: ReturnType<typeof setTimeout> | null = null;

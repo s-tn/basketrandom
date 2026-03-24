@@ -9,6 +9,8 @@ export interface Room {
   players: string[]
   createdAt: number
   scoreMax: number
+  gravity: number
+  timeLimit: number
   roundGoal: number
   tournament: boolean
   private: boolean
@@ -25,6 +27,8 @@ export interface CreateRoomParams {
   name: string
   host: string
   scoreMax: number
+  gravity?: number
+  timeLimit?: number
   roundGoal: number
   tournament: boolean
   tPassword: string
