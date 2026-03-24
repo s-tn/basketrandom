@@ -150,8 +150,8 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     pingIntervalRef.current = setInterval(() => ping(), 1000);
 
     socket.onmessage = (e: MessageEvent) => {
-      if (socket._onmessage) {
-        socket._onmessage(e);
+      if ((socket as any)._onmessage) {
+        (socket as any)._onmessage(e);
       }
       if (e.data.toString() === "pong") return;
       const data = JSON.parse(e.data.toString());

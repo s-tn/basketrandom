@@ -1,9 +1,10 @@
-import { Browser } from 'puppeteer-core';
+import type { Browser } from 'puppeteer-core';
 import prisma from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
 import ws from "ws";
 import { resolve } from 'node:path';
-import { launch, getStream, wss } from 'puppeteer-stream';
+// Dynamic import to avoid build-time crash from native deps
+const puppeteerStream = () => import('puppeteer-stream');
 import fs from 'fs';
 import { encodeSnapshot, encodeDelta, encodeEvent, type GameState } from "@/lib/netcode";
 import { completeMatch } from "@/lib/tournament";
@@ -95,6 +96,7 @@ async function createLobby(id: string) {
     const roomData = await roomInfo();
     if (roomData?.tournament && roomData?.private) {
         try {
+            const { getStream } = await puppeteerStream();
             stream = await getStream(page, { audio: true, video: true, bitsPerSecond: 1000000, frameSize: 8 });
         } catch {
             console.warn('Could not get stream for tournament match');
@@ -623,6 +625,7 @@ const run = async () => {
             isWindows ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' :
             'google-chrome-stable');
 
+        const { launch } = await puppeteerStream();
         browserPromise = launch({
                 headless: process.env.HEADLESS !== 'false' ? 'new' : false,
                 executablePath: exec,

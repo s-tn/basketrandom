@@ -21,7 +21,7 @@ export default function GameResult({
                     <span className={"text-xs font-light" + (p1lost ? " text-gray-200/75" : "")}>{players[0]}</span>
                     <span className={"text-md" + (p1lost ? " text-gray-200/75" : "")}>{score[0]}</span>
                 </div>
-                <Separator className="w-1 h-8 bg-white mx-2" orientation="vertical" />
+                <Separator className="w-1 h-8 bg-white mx-2" />
                 <div className="flex flex-row gap-2 items-center justify-center">
                     <span className={"text-md" + (p2lost ? " text-gray-200/75" : "")}>{score[1]}</span>
                     <span className={"text-xs font-light" + (p2lost ? " text-gray-200/75" : "")}>{players[1]}</span>
