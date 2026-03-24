@@ -152,6 +152,26 @@ async function start() {
     const stateBuffer = createStateBuffer();
     let gameStarted = false;
 
+    // Replay state injection (must be after stateBuffer is declared)
+    window.addEventListener('message', (e) => {
+        if (e.data?.type === 'replayState') {
+            const s = e.data.state;
+            stateBuffer.push({
+                p0x: s[0], p0y: s[1], p0angle: s[2],
+                p0velX: s[3], p0velY: s[4], p0armAngle: s[5],
+                p1x: s[6], p1y: s[7], p1angle: s[8],
+                p1velX: s[9], p1velY: s[10], p1armAngle: s[11],
+                ballX: s[12], ballY: s[13], ballAngle: s[14],
+                ballVelX: s[15], ballVelY: s[16],
+                ballHolder: s[17], score0: s[18], score1: s[19], flags: s[20],
+            });
+            if (!gameStarted) {
+                gameStarted = true;
+                requestAnimationFrame(renderLoop);
+            }
+        }
+    });
+
     function renderLoop() {
         if (gameStarted) {
             const interpolated = stateBuffer.interpolate();

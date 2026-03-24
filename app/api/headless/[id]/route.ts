@@ -691,6 +691,15 @@ async function createLobby(id: string) {
                 }
             });
             await completeMatch(id, 0);
+            if (replayBuffer.length > 0) {
+                prisma.replay.create({
+                    data: {
+                        roomId: id,
+                        data: JSON.stringify(replayBuffer),
+                        duration: Date.now() - replayStart,
+                    },
+                }).catch(() => {});
+            }
             const endPacket0 = encodeEvent(seq++, 'end', { winner: 0 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket0);
             setTimeout(async () => {
@@ -712,6 +721,15 @@ async function createLobby(id: string) {
                 }
             });
             await completeMatch(id, 1);
+            if (replayBuffer.length > 0) {
+                prisma.replay.create({
+                    data: {
+                        roomId: id,
+                        data: JSON.stringify(replayBuffer),
+                        duration: Date.now() - replayStart,
+                    },
+                }).catch(() => {});
+            }
             const endPacket1 = encodeEvent(seq++, 'end', { winner: 1 });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(endPacket1);
             setTimeout(async () => {
@@ -775,6 +793,9 @@ async function createLobby(id: string) {
         for (const g of gamers) if (g.readyState === 1) g.send(ep);
     }
 
+    const replayBuffer: Array<{ t: number; s: number[] }> = [];
+    const replayStart = Date.now();
+
     await page.exposeFunction('__sendState', (flatState: number[]) => {
         if (paused) return;
 
@@ -789,6 +810,8 @@ async function createLobby(id: string) {
           score0: flatState[18], score1: flatState[19],
           flags: flatState[20],
         };
+
+        replayBuffer.push({ t: Date.now() - replayStart, s: flatState });
 
         seq++;
 
