@@ -16,9 +16,10 @@ interface GameContainerProps {
   players: string[]
   ws: string
   lobbySocket?: ReconnectingWebSocket
+  playerSkins?: Record<string, string>
 }
 
-export function GameContainer({ roomId, players, ws, lobbySocket }: GameContainerProps) {
+export function GameContainer({ roomId, players, ws, lobbySocket, playerSkins }: GameContainerProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState("Loading game...")
   const [ready, setReady] = useState(false);
@@ -224,6 +225,31 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           setCountdown(-1);
 
           cw.unpause();
+
+          // Apply character color skins
+          if (playerSkins && Object.keys(playerSkins).length > 0) {
+            const SKIN_COLORS: Record<string, string> = {
+              default: '#ffffff',
+              red: '#ef4444',
+              blue: '#3b82f6',
+              green: '#22c55e',
+              gold: '#eab308',
+              purple: '#a855f7',
+              pink: '#ec4899',
+              orange: '#f97316',
+            };
+            const resolvedSkins: Record<string, string> = {};
+            for (const [name, skinId] of Object.entries(playerSkins)) {
+              resolvedSkins[name] = SKIN_COLORS[skinId] ?? skinId;
+            }
+            const p0Color = resolvedSkins[players[0]];
+            const p1Color = resolvedSkins[players[1]];
+            const skinsToSend: Record<string, string> = {};
+            if (p0Color) skinsToSend.player0 = p0Color;
+            if (p1Color) skinsToSend.player1 = p1Color;
+            const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
+            iframe?.contentWindow?.postMessage({ type: 'applySkins', skins: skinsToSend }, '*');
+          }
         }
       });
       cw.addEventListener('basket-key', (event: CustomEvent<{key: string, type: string}>) => {

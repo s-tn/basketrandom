@@ -119,6 +119,15 @@ export async function SOCKET(
             }
           }
         }
+        if (data.type === 'skin') {
+          // Broadcast skin choice to all clients in this lobby
+          const lobbyClients = sockets.filter((s: any) => s.id === id);
+          for (const c of lobbyClients) {
+            if (c.readyState === 1) {
+              c.send(JSON.stringify({ type: 'skin', playerName: data.playerName, skin: data.skin }));
+            }
+          }
+        }
         if (data.type === 'rematch-request') {
           const lobbyClients = sockets.filter((s: any) => s.id === id && s !== client);
           for (const lobbyClient of lobbyClients) {

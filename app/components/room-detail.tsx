@@ -10,6 +10,7 @@ import type { Room } from "@/lib/types"
 import { GameContainer } from "@/components/game-container"
 import { PingIndicator } from "@/components/ping-indicator"
 import { Chat } from "@/components/chat"
+import { SkinPicker } from "@/components/skin-picker"
 import ReconnectingWebSocket from 'reconnecting-websocket'
 
 interface RoomDetailProps {
@@ -31,7 +32,14 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   const [ starting, setStarting ] = useState(false);
   const [ endpoint, setEndpoint ] = useState("");
   const [socket, setSocket] = useState<ReconnectingWebSocket | null>(null);
+  const [selectedSkin, setSelectedSkin] = useState('default');
+  const [playerSkins, setPlayerSkins] = useState<Record<string, string>>({});
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const storedSkin = localStorage.getItem('playerSkin');
+    if (storedSkin) setSelectedSkin(storedSkin);
+  }, []);
 
   useEffect(() => {
     // Get player name from localStorage
@@ -163,6 +171,9 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
         setP3Conn(count >= 3);
         setP4Conn(count >= 4);
       }
+      if (data.type === "skin") {
+        setPlayerSkins(prev => ({ ...prev, [data.playerName]: data.skin }));
+      }
     }
 
     socket.onclose = () => {
@@ -272,7 +283,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
       </div>
 
       {gameReady ? (
-        <GameContainer roomId={roomId} lobbySocket={socket} players={room.players} ws={endpoint} />
+        <GameContainer roomId={roomId} lobbySocket={socket} players={room.players} ws={endpoint} playerSkins={playerSkins} />
       ) : (
         <Card>
           <CardHeader>
@@ -372,6 +383,17 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
                   </div>
                 )}
               </div>
+
+              <SkinPicker
+                currentSkin={selectedSkin}
+                onSelect={(skin) => {
+                  setSelectedSkin(skin);
+                  setPlayerSkins(prev => ({ ...prev, [playerName]: skin }));
+                  if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'skin', playerName, skin }));
+                  }
+                }}
+              />
 
               <div className="p-3 text-sm border rounded-md bg-muted/50">
                 <p>Share this invite link with a friend to play together:</p>
