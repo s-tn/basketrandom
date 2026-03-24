@@ -25,6 +25,7 @@ model Room {
   score1    Int      @default(0)
   winner    Int?
   tournamentMatch TournamentMatch?
+  clips     Clip[]
 }
 
 model Tournament {
@@ -74,4 +75,17 @@ model TournamentMatch {
   player0      TournamentParticipant? @relation("MatchPlayer0", fields: [player0Id], references: [id])
   player1      TournamentParticipant? @relation("MatchPlayer1", fields: [player1Id], references: [id])
   winner       TournamentParticipant? @relation("MatchWinner", fields: [winnerId], references: [id])
+}
+
+model Clip {
+  id        String   @id @default(cuid())
+  roomId    String
+  player    String?
+  filename  String
+  duration  Int      @default(10)
+  shared    Boolean  @default(false)
+  auto      Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  room      Room     @relation(fields: [roomId], references: [id])
 }
