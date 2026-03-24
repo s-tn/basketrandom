@@ -8,6 +8,7 @@ const puppeteerStream = () => import('puppeteer-stream');
 import fs from 'fs';
 import { encodeSnapshot, encodeDelta, encodeEvent, type GameState } from "@/lib/netcode";
 import { completeMatch } from "@/lib/tournament";
+import { createServerClipper } from "@/lib/server-clipper";
 
 function GET() {
     const headers = new Headers();
@@ -122,6 +123,11 @@ async function createLobby(id: string) {
             const { startVoiceStream } = await import("@/lib/discord");
             startVoiceStream(stream);
         }
+    }
+
+    let serverClipper: ReturnType<typeof createServerClipper> | null = null;
+    if (stream) {
+        serverClipper = createServerClipper(stream, id);
     }
 
     await page.evaluate(() => {
@@ -386,6 +392,7 @@ async function createLobby(id: string) {
             } catch {}
             const lIdx = socketListeners.indexOf(onNewSocketSubscribe);
             if (lIdx !== -1) socketListeners.splice(lIdx, 1);
+            if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
             page.close().catch(() => {});
             delete lobbies[id];
             return;
@@ -410,6 +417,7 @@ async function createLobby(id: string) {
                     clearInterval(disconnectCheck!);
                     const lIdx2 = socketListeners.indexOf(onNewSocketSubscribe);
                     if (lIdx2 !== -1) socketListeners.splice(lIdx2, 1);
+                    if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
                     setTimeout(() => page.close().catch(() => {}), 2000);
                     delete lobbies[id];
                 }
@@ -457,6 +465,7 @@ async function createLobby(id: string) {
                 stopVoiceStream();
                 const lIdx3 = socketListeners.indexOf(onNewSocketSubscribe);
                 if (lIdx3 !== -1) socketListeners.splice(lIdx3, 1);
+                if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
                 page.close().catch(() => {});
                 delete lobbies[id];
                 clearInterval(disconnectCheck!);
@@ -477,6 +486,7 @@ async function createLobby(id: string) {
                 stopVoiceStream();
                 const lIdx4 = socketListeners.indexOf(onNewSocketSubscribe);
                 if (lIdx4 !== -1) socketListeners.splice(lIdx4, 1);
+                if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
                 page.close().catch(() => {});
                 delete lobbies[id];
                 clearInterval(disconnectCheck!);
@@ -552,6 +562,8 @@ async function createLobby(id: string) {
                 where: { id },
                 data: { score0: state.score0, score1: state.score1 }
             }).catch(() => {});
+
+            if (serverClipper) serverClipper.trigger().catch(() => {});
 
             // Check for round win
             roomInfo().then(async (room) => {
