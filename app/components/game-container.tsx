@@ -31,7 +31,10 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
   const [winner, setWinner] = useState<number | null>(null);
   const [score, setScore] = useState<[number, number]>([0, 0])
   const [clipBlob, setClipBlob] = useState<Blob | null>(null);
-  const [clipAuto, setClipAuto] = useState(false);;
+  const [clipAuto, setClipAuto] = useState(false);
+  const [showSidePick, setShowSidePick] = useState(false);
+  const [mySide, setMySide] = useState<string | null>(null);
+  const [coinFlipWinner, setCoinFlipWinner] = useState<string | null>(null);
 
   const gameLoadedRef = useRef<{ promise: Promise<void>; resolve: () => void }>({ promise: Promise.resolve(), resolve: () => {} });
 
@@ -156,8 +159,24 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           if (event.data.phase === 'start') {
             setMessage("");
           } else {
-            setMessage("Waiting for host...")
+            // Coin flip animation ended
+            setCoinFlipWinner(event.data.winnerName);
+            if (event.data.youWon) {
+              // Show side pick UI
+              setShowSidePick(true);
+              setMessage("");
+            } else {
+              setMessage(`${event.data.winnerName} is picking a side...`);
+            }
           }
+        }
+        if (event.data.type === 'side-assigned') {
+          setMySide(event.data.side);
+          setShowSidePick(false);
+          setMessage(event.data.round === 0
+            ? `You are on the ${event.data.side}!`
+            : `Sides swapped! You are now on the ${event.data.side}!`);
+          setTimeout(() => setMessage(""), 2000);
         }
 
         if (event.data.type === 'loaded') {
@@ -325,6 +344,42 @@ export function GameContainer({ roomId, players, ws, lobbySocket }: GameContaine
           {
             <div className={"absolute inset-0 bg-black opacity-85 flex items-center justify-center" + ((countdown + 1) ? "" : " hidden")}>
               <span className="text-white text-4xl">{countdown + 1}</span>
+            </div>
+          }
+          {
+            showSidePick &&
+            <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-20 gap-4">
+              <span className="text-white text-xl font-semibold">You won the coin flip!</span>
+              <span className="text-white/70 text-sm">Pick your starting side:</span>
+              <div className="flex gap-6">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-8 py-6"
+                  onClick={() => {
+                    const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
+                    iframe?.contentWindow?.postMessage({ type: 'side-pick', side: 'left' }, '*');
+                    setShowSidePick(false);
+                    setMessage("Starting...");
+                  }}
+                >
+                  ← Left
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-8 py-6"
+                  onClick={() => {
+                    const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
+                    iframe?.contentWindow?.postMessage({ type: 'side-pick', side: 'right' }, '*');
+                    setShowSidePick(false);
+                    setMessage("Starting...");
+                  }}
+                >
+                  Right →
+                </Button>
+              </div>
+              <span className="text-white/50 text-xs mt-2">Sides alternate each round</span>
             </div>
           }
           {

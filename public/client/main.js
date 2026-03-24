@@ -80,6 +80,10 @@ async function start() {
         if (e.data?.type === 'clipDuration' && clipper) {
             clipper.setDuration(e.data.duration);
         }
+        if (e.data?.type === 'side-pick') {
+            // Parent sent the winner's side choice — relay to server
+            comms.in.send(JSON.stringify({ type: 'side-pick', side: e.data.side }));
+        }
     });
 
     const stateBuffer = createStateBuffer();
@@ -152,13 +156,31 @@ async function start() {
                     comms.in.send(JSON.stringify({ type: 'ready' }));
                 }
             }
-            if (event.data.startsWith('coin flipped: ')) {
-                const side = parseInt(event.data.split('coin flipped: ')[1]);
-                window.postMessage({ type: 'coinflip', phase: 'start' }, '*');
-                cw.flipCoin("1", "2", "idk", side, () => {
-                    window.postMessage({ type: 'coinflip', phase: 'end' }, '*');
-                });
-            }
+            // Try parsing JSON messages
+            try {
+                const json = JSON.parse(event.data);
+                if (json.type === 'coinflip') {
+                    // Coin flip result — show animation then side pick if winner
+                    const result = json.winner + 1; // 0-indexed to 1-indexed for flipCoin
+                    window.postMessage({ type: 'coinflip', phase: 'start' }, '*');
+                    cw.flipCoin(json.players[0], json.players[1], "Coin Flip", result, () => {
+                        window.postMessage({
+                            type: 'coinflip',
+                            phase: 'end',
+                            youWon: json.youWon,
+                            winnerName: json.winnerName,
+                            players: json.players,
+                        }, '*');
+                    });
+                }
+                if (json.type === 'side-assigned') {
+                    window.postMessage({
+                        type: 'side-assigned',
+                        side: json.side,
+                        round: json.round,
+                    }, '*');
+                }
+            } catch {}
             return;
         }
 

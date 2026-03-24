@@ -300,18 +300,71 @@ async function createLobby(id: string) {
         }, 100);
     });
 
-    // flip a coin 1 or 2
-    const flip = Math.random() < 0.5 ? 1 : 2;
+    // Coin flip: winner picks their side (left/right)
+    // clients()[0] = host (player who created room), clients()[1] = opponent
+    const flipWinnerIdx = Math.random() < 0.5 ? 0 : 1;
+    const flipClients = clients();
 
-    clients().forEach(client => {
-        client.send(`coin flipped: ${flip}`);
+    // Side mapping: which client controls which game side
+    // left = ArrowUp (player 0 in C3), right = W (player 1 in C3)
+    let clientSideMap: Record<string, 'left' | 'right'> = {};
+    let currentRound = 0;
+
+    // Send coin flip result to both clients with player names
+    const room = await roomInfo();
+    const playerNames = [room.host, room.opponent || 'Player 2'];
+    flipClients.forEach((client, i) => {
+        client.send(JSON.stringify({
+            type: 'coinflip',
+            winner: flipWinnerIdx,
+            winnerName: playerNames[flipWinnerIdx],
+            youWon: i === flipWinnerIdx,
+            players: playerNames,
+        }));
     });
 
-    await new Promise<void>((resolve) => {
-        setTimeout(() => {
-            resolve();
-        }, 5000);
+    // Wait for winner to pick a side
+    const sideChoice: string = await new Promise((resolve) => {
+        const winnerClient = flipClients[flipWinnerIdx];
+        const handler = (message: any) => {
+            try {
+                const data = JSON.parse(message.toString());
+                if (data.type === 'side-pick' && (data.side === 'left' || data.side === 'right')) {
+                    winnerClient.removeListener('message', handler);
+                    resolve(data.side);
+                }
+            } catch {}
+        };
+        winnerClient.on('message', handler);
+        // Timeout: default to left after 15 seconds
+        setTimeout(() => resolve('left'), 15000);
     });
+
+    // Assign sides based on winner's choice
+    function assignSides(winnerSide: string, round: number) {
+        // Alternate sides each round
+        const swapped = round % 2 === 1;
+        let wSide = winnerSide as 'left' | 'right';
+        if (swapped) wSide = wSide === 'left' ? 'right' : 'left';
+
+        const loserSide = wSide === 'left' ? 'right' : 'left';
+        const loserIdx = flipWinnerIdx === 0 ? 1 : 0;
+
+        clientSideMap = {};
+        clientSideMap[flipClients[flipWinnerIdx]?.id] = wSide;
+        clientSideMap[flipClients[loserIdx]?.id] = loserSide;
+
+        // Notify clients of their sides
+        flipClients.forEach((client, i) => {
+            const side = i === flipWinnerIdx ? wSide : loserSide;
+            client.send(JSON.stringify({ type: 'side-assigned', side, round }));
+        });
+    }
+
+    assignSides(sideChoice, 0);
+
+    // Wait for animation to finish
+    await new Promise<void>((resolve) => setTimeout(resolve, 3000));
 
     let gamers: any[] = [];
 
@@ -319,21 +372,44 @@ async function createLobby(id: string) {
         if (client.lobbyId === id) {
             switch(client.type) {
                 case 'events':
-                    console.log('event', client.id)
                     client.on('message', async (message: any) => {
                         if (message.toString() === 'ping') return;
-        
-                        const data = JSON.parse(message.toString());
-        
-                        if (data.type === 'key') {
-                            if (data.event === 'keydown') {
-                                await browser.page.keyboard.down(data.key);
-                            }
-        
-                            if (data.event === 'keyup') {
-                                await browser.page.keyboard.up(data.key);
+
+                        // Handle binary input packets
+                        if (message instanceof Buffer || message instanceof ArrayBuffer) {
+                            const buf = Buffer.from(message);
+                            if (buf.length >= 11 && buf.readUInt8(0) === 0x03) {
+                                // Binary input: [type][seq4][ts4][playerIdx][action]
+                                const action = buf.readUInt8(10); // 0=release, 1=press
+
+                                // Map client to their assigned side's key
+                                const side = clientSideMap[client.id];
+                                const key = side === 'left' ? 'ArrowUp' : 'w';
+
+                                if (action === 1) {
+                                    await browser.page.keyboard.down(key);
+                                } else {
+                                    await browser.page.keyboard.up(key);
+                                }
+                                return;
                             }
                         }
+
+                        // Handle JSON messages (legacy/side-pick)
+                        try {
+                            const data = JSON.parse(message.toString());
+                            if (data.type === 'key') {
+                                // Legacy: map based on side assignment
+                                const side = clientSideMap[client.id];
+                                const key = side === 'left' ? 'ArrowUp' : 'w';
+                                if (data.event === 'keydown') {
+                                    await browser.page.keyboard.down(key);
+                                }
+                                if (data.event === 'keyup') {
+                                    await browser.page.keyboard.up(key);
+                                }
+                            }
+                        } catch {}
                     });
                     break;
                 case 'stream':
@@ -494,6 +570,9 @@ async function createLobby(id: string) {
                 clearInterval(disconnectCheck!);
             }, 5000);
         } else {
+            currentRound++;
+            assignSides(sideChoice, currentRound);
+
             const roundPacket = encodeEvent(seq++, 'round', { round: rounds.length });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(roundPacket);
 
