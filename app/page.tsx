@@ -55,6 +55,14 @@ export default function Home() {
         >
           Tournaments
         </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          className="px-8 border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+          onClick={() => (window.location.href = "/clips")}
+        >
+          Clips
+        </Button>
       </div>
     </div>
   )
