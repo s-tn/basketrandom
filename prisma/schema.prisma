@@ -94,3 +94,21 @@ model Clip {
 
   room      Room     @relation(fields: [roomId], references: [id])
 }
+
+model Player {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  elo       Int      @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Achievement {
+  id         String   @id @default(cuid())
+  playerName String
+  achieveId  String
+  unlockedAt DateTime @default(now())
+
+  @@unique([playerName, achieveId])
+}
