@@ -31,7 +31,9 @@ model Room {
   winner    Int?
   tournamentMatch TournamentMatch?
   clips     Clip[]
+  replays   Replay[]
 }
+
 
 model Tournament {
   id          String   @id @default(cuid())
@@ -80,6 +82,16 @@ model TournamentMatch {
   player0      TournamentParticipant? @relation("MatchPlayer0", fields: [player0Id], references: [id])
   player1      TournamentParticipant? @relation("MatchPlayer1", fields: [player1Id], references: [id])
   winner       TournamentParticipant? @relation("MatchWinner", fields: [winnerId], references: [id])
+}
+
+model Replay {
+  id        String   @id @default(cuid())
+  roomId    String
+  data      String   // JSON array of timestamped state snapshots
+  duration  Int      // total duration in ms
+  createdAt DateTime @default(now())
+
+  room      Room     @relation(fields: [roomId], references: [id])
 }
 
 model Clip {
