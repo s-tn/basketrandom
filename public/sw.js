@@ -1,6 +1,5 @@
-const CACHE_NAME = 'basket-random-v1';
+const CACHE_NAME = 'basket-random-v2';
 const STATIC_ASSETS = [
-  '/',
   '/game.html',
   '/play.html',
   '/game.bundle.js',
@@ -23,14 +22,21 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network-first for API calls, cache-first for static assets
+  // Never intercept navigation requests — let Next.js handle them
+  if (event.request.mode === 'navigate') {
+    return;
+  }
+
+  // Network-first for API calls
   if (event.request.url.includes('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
-  } else {
-    event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request))
-    );
+    return;
   }
+
+  // Cache-first for static game assets only
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
+  );
 });
