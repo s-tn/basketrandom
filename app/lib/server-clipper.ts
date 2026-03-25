@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import prisma from './prisma';
 
-const CLIPS_DIR = join(process.cwd(), 'data', 'clips');
+const CLIPS_DIR = process.env.CLIPS_DIR || join(process.cwd(), 'data', 'clips');
 
 export function createServerClipper(stream: Readable, roomId: string, durationSeconds = 10) {
   const chunks: Buffer[] = [];

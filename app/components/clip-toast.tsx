@@ -49,7 +49,7 @@ export function ClipToast({
       const res = await fetch("/api/clips", { method: "POST", body: form })
       if (!res.ok) throw new Error("Upload failed")
       const data = await res.json()
-      setShareUrl(data.url)
+      setShareUrl(`${window.location.origin}${data.url}`)
     } catch (err) {
       console.error("Clip share failed:", err)
     } finally {

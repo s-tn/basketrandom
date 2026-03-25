@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { readFile, unlink } from "fs/promises";
 import { join } from "path";
 
-const CLIPS_DIR = join(process.cwd(), 'data', 'clips');
+const CLIPS_DIR = process.env.CLIPS_DIR || join(process.cwd(), 'data', 'clips');
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

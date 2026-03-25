@@ -36,6 +36,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   const [playerSkins, setPlayerSkins] = useState<Record<string, string>>({});
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startGameListenerRef = useRef(false);
+  const isJoinedRef = useRef(false);
 
   useEffect(() => {
     const storedSkin = localStorage.getItem('playerSkin');
@@ -66,6 +67,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
         try {
           await joinRoom(roomId, storedName)
           setIsJoined(true)
+          isJoinedRef.current = true
         } catch (error) {
           console.error("Failed to join room:", error)
         }
@@ -82,7 +84,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     // Clean up on unmount
     return () => {
       unsubscribe()
-      if (isJoined) {
+      if (isJoinedRef.current) {
         leaveRoom(roomId, storedName || "").catch((err) => console.error("Error leaving room:", err))
       }
     }

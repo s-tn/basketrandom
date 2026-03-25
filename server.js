@@ -1,3 +1,6 @@
+import { config } from 'dotenv';
+config(); // Load .env before anything else
+
 import { Server } from 'node:http';
 import { parse } from 'node:url';
 import next from 'next';
@@ -15,18 +18,30 @@ for (const key of requiredEnv) {
 
 import './game/headless.js';
 
-esbuild.context({
-  entryPoints: ['./public/client/main.js'],
-  bundle: true,
-  outfile: './public/game.bundle.js',
-  minify: true,
-  sourcemap: true
-}).then((context) => {
-  console.log('Bundling game...');
-  return context.watch().then(() => {
-    console.log('Game bundle ready.');
+const dev = process.env.NODE_ENV !== 'production';
+
+if (dev) {
+  esbuild.context({
+    entryPoints: ['./public/client/main.js'],
+    bundle: true,
+    outfile: './public/game.bundle.js',
+    minify: true,
+    sourcemap: true
+  }).then((context) => {
+    console.log('Bundling game...');
+    return context.watch().then(() => {
+      console.log('Game bundle watching.');
+    });
   });
-});
+} else {
+  esbuild.build({
+    entryPoints: ['./public/client/main.js'],
+    bundle: true,
+    outfile: './public/game.bundle.js',
+    minify: true,
+    sourcemap: true
+  }).then(() => console.log('Game bundle built.'));
+}
 
 //import './game/index.js'
 
@@ -35,7 +50,6 @@ setHttpServer(httpServer);
 const webSocketServer = new WebSocketServer({ noServer: true });
 setWebSocketServer(webSocketServer);
 
-const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = Number.parseInt(process.env.PORT ?? '9000');
 const app = next({ dev, hostname, port, customServer: true });

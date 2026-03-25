@@ -1,5 +1,3 @@
-import { anticheat } from "./anticheat";
-
 export function setup(window) {
     return new Promise(async (resolve) => {
         window.c3_runtimeInterface._localRuntime.SetTimeScale(10000000000);

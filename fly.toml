@@ -8,6 +8,7 @@ primary_region = "iad"
   PORT = "8080"
   DATABASE_URL = "file:/data/prod.db"
   HEADLESS = "true"
+  CLIPS_DIR = "/data/clips"
 
 [mounts]
   source = "data"
@@ -33,4 +34,4 @@ primary_region = "iad"
   [[services.http_checks]]
     interval = 10000
     timeout = 2000
-    path = "/api/ping"
+    path = "/api/health"

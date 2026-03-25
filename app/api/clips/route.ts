@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 
-const CLIPS_DIR = join(process.cwd(), 'data', 'clips');
+const CLIPS_DIR = process.env.CLIPS_DIR || join(process.cwd(), 'data', 'clips');
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
