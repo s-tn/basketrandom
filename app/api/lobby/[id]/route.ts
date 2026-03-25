@@ -11,31 +11,7 @@ const sockets: import("ws").WebSocket[] = [];
 let server: import("ws").WebSocketServer | null = null;
 
 export async function POST() {
-  return new Response(
-    'something'
-  );
-  const _ = (sockets.length, server?.clients.size, 'Checking for inactive rooms');
-  const rooms = await prisma.room.findMany();
-  for (const room of rooms) {
-    // Notify each room's sockets about the current number of connections
-    const roomSockets = sockets.filter((socket: any) => socket.id === room.id && socket.readyState === 1); // Filter for open sockets in this room
-    if (roomSockets.length === 0) {
-      await prisma.room.delete({
-        where: {
-          id: room.id,
-        },
-      });
-
-    }
-  }
-
-  return new Response(
-    JSON.stringify({ success: true }),
-    {
-      headers: { "Content-Type": "application/json" },
-      status: 200,
-    }
-  );
+    return new Response('ok');
 }
 
 export async function SOCKET(
@@ -61,14 +37,15 @@ export async function SOCKET(
     }
 
     (client as any).id = id;
+    (client as any).lobbyId = id;
 
     sockets.push(client); // Store the client in the sockets array
 
-    sockets.forEach((socket) => {
+    sockets.filter((s: any) => s.lobbyId === id).forEach((socket) => {
       socket.send(JSON.stringify({
         type: "conn",
         roomId: id,
-        sockets: sockets.filter((s: any) => s.id === id).length,
+        sockets: sockets.filter((s: any) => s.lobbyId === id).length,
       }));
     });
 
@@ -101,7 +78,7 @@ export async function SOCKET(
           }
         }
         if (data.type === 'start-game') {
-          sockets.forEach((socket) => {
+          sockets.filter((s: any) => s.lobbyId === id).forEach((socket) => {
             const gameSocket = `/api/headless/${data.roomId}`;
             socket.send(JSON.stringify({
               type: "start-game",
@@ -112,7 +89,7 @@ export async function SOCKET(
         }
         if (data.type === 'chat') {
           // Broadcast to all clients in this lobby
-          const lobbyClients = sockets.filter((s: any) => s.id === id);
+          const lobbyClients = sockets.filter((s: any) => s.lobbyId === id);
           for (const c of lobbyClients) {
             if (c.readyState === 1) {
               c.send(JSON.stringify(data));
@@ -121,7 +98,7 @@ export async function SOCKET(
         }
         if (data.type === 'skin') {
           // Broadcast skin choice to all clients in this lobby
-          const lobbyClients = sockets.filter((s: any) => s.id === id);
+          const lobbyClients = sockets.filter((s: any) => s.lobbyId === id);
           for (const c of lobbyClients) {
             if (c.readyState === 1) {
               c.send(JSON.stringify({ type: 'skin', playerName: data.playerName, skin: data.skin }));
@@ -153,7 +130,7 @@ export async function SOCKET(
                 timeLimit: currentRoom.timeLimit,
               },
             });
-            const lobbyClients = sockets.filter((s: any) => s.id === id);
+            const lobbyClients = sockets.filter((s: any) => s.lobbyId === id);
             for (const lobbyClient of lobbyClients) {
               if (lobbyClient.readyState === 1) {
                 lobbyClient.send(JSON.stringify({ type: 'rematch-room', roomId: newId }));
@@ -166,11 +143,11 @@ export async function SOCKET(
   
     client.on("close", () => {
       sockets.splice(sockets.indexOf(client), 1); // Remove the client from the sockets array
-      sockets.forEach((socket) => {
+      sockets.filter((s: any) => s.lobbyId === id).forEach((socket) => {
         socket.send(JSON.stringify({
           type: "conn",
           roomId: id,
-          sockets: sockets.filter((s: any) => s.id === id).length,
+          sockets: sockets.filter((s: any) => s.lobbyId === id).length,
         }));
       });
     });

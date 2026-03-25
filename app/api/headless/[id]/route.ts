@@ -730,6 +730,8 @@ async function createLobby(id: string) {
         const room = await roomInfo();
         const rounds = JSON.parse(room.rounds);
         rounds.push([winner, room.score0, room.score1]);
+        const finalScore0 = room.score0;
+        const finalScore1 = room.score1;
         await prisma.room.update({
             where: { id },
             data: {
@@ -757,7 +759,7 @@ async function createLobby(id: string) {
                 const loserName = room.opponent;
                 if (winnerName && loserName) {
                     const { recordSeasonResult } = await import("@/lib/seasons");
-                    recordSeasonResult(winnerName, loserName, room.score0, room.score1).catch(() => {});
+                    recordSeasonResult(winnerName, loserName, finalScore0, finalScore1).catch(() => {});
 
                     const { updateRankedElo } = await import("@/lib/ranked");
                     updateRankedElo(winnerName, loserName).catch(() => {});
@@ -768,12 +770,12 @@ async function createLobby(id: string) {
                     const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
                     const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0);
                     checkMatchAchievements(winnerName, {
-                        won: true, goalsScored: room.score0, opponentGoals: room.score1,
+                        won: true, goalsScored: finalScore0, opponentGoals: finalScore1,
                         totalWins, totalGoals, seriesScore: [room.wins0, room.wins1],
                         is2v2: room.mode === '2v2',
                     }).catch(() => {});
                     checkMatchAchievements(loserName, {
-                        won: false, goalsScored: room.score1, opponentGoals: room.score0,
+                        won: false, goalsScored: finalScore1, opponentGoals: finalScore0,
                         totalWins: 0, totalGoals: 0, seriesScore: [room.wins1, room.wins0],
                         is2v2: room.mode === '2v2',
                     }).catch(() => {});
@@ -811,7 +813,7 @@ async function createLobby(id: string) {
                 const loserName = room.host;
                 if (winnerName && loserName) {
                     const { recordSeasonResult } = await import("@/lib/seasons");
-                    recordSeasonResult(winnerName, loserName, room.score1, room.score0).catch(() => {});
+                    recordSeasonResult(winnerName, loserName, finalScore1, finalScore0).catch(() => {});
 
                     const { updateRankedElo } = await import("@/lib/ranked");
                     updateRankedElo(winnerName, loserName).catch(() => {});
@@ -822,12 +824,12 @@ async function createLobby(id: string) {
                     const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
                     const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0);
                     checkMatchAchievements(winnerName, {
-                        won: true, goalsScored: room.score1, opponentGoals: room.score0,
+                        won: true, goalsScored: finalScore1, opponentGoals: finalScore0,
                         totalWins, totalGoals, seriesScore: [room.wins1, room.wins0],
                         is2v2: room.mode === '2v2',
                     }).catch(() => {});
                     checkMatchAchievements(loserName, {
-                        won: false, goalsScored: room.score0, opponentGoals: room.score1,
+                        won: false, goalsScored: finalScore0, opponentGoals: finalScore1,
                         totalWins: 0, totalGoals: 0, seriesScore: [room.wins0, room.wins1],
                         is2v2: room.mode === '2v2',
                     }).catch(() => {});

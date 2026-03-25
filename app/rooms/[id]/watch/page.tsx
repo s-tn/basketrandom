@@ -115,7 +115,7 @@ export default function WatchPage() {
                     playerName,
                     roomId: id,
                     predictedWinner: side,
-                    amount: betAmount,
+                    amount: effectiveAmount,
                 }),
             });
             const data = await res.json();
