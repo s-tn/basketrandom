@@ -367,5 +367,149 @@
             anim.play();
         };
         </script>
+    <script defer>
+        document.body.insertAdjacentHTML('beforeend', `
+            <div class="flip-over" id="flip-over">
+                <div class="coin" id="coin">
+                    <div class="heads">
+                        Ender
+                    </div>
+                    <div class="tails">
+                        Hello
+                    </div>
+                </div>
+                <div class="text-center status">
+                    Coin Flip
+                </div>
+            </div>
+        `);
+
+        document.head.insertAdjacentHTML('beforeend', `
+            <style id="coin-style">
+                .status {
+                    color: white;
+                    font-size: 32px;
+                    font-weight: 350;
+                }
+                .flip-over {
+                    position: absolute;
+                    top: 0;
+                    opacity: 0;
+                    transition: opacity 0.2s ease-in-out;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    font-family: Inter, sans-serif;
+                    z-index: 1000;
+                    justify-content: center;
+                    flex-direction: column;
+                    gap: 30px;
+                    align-items: center;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: none;
+                }
+                .coin{
+                    height: 150px;
+                    width: 150px;
+                    position: relative;
+                    margin: 32px auto;
+                    -webkit-transform-style: preserve-3d;
+                            transform-style: preserve-3d;
+                }
+                .coin div{
+                    width: 150px;
+                    height: 150px;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-size: 25px;
+                    color: white;
+                }
+                .heads {
+                    background-color: #918c8a;
+                }
+                .tails {
+                    background-color: #cc6826;
+                }
+                .heads,.tails{
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    -webkit-backface-visibility: hidden;
+                            backface-visibility: hidden;
+                }
+                .tails{
+                    transform: rotateX(180deg);
+                }
+                @keyframes spin-tails{
+                    0%{
+                        transform: rotateX(0);
+                        scale: 1;
+                    }
+                    50%{
+                        scale: 1.5;
+                    }
+                    100%{
+                        transform: rotateX(900deg);
+                        scale: 1;
+                    }
+                }
+                @keyframes spin-heads{
+                    0%{
+                        transform: rotateX(0);
+                        scale: 1;
+                    }
+                    50%{
+                        scale: 1.5;
+                    }
+                    100%{
+                        transform: rotateX(1080deg);
+                        scale: 1;
+                    }
+                }
+            </style>
+        `);
+
+        window.flipCoin = function flipCoin(heads, tails, text, result = null, output = (name) => name) {
+            return new Promise(async (resolve) => {
+                let coin = document.querySelector("#coin");
+                let flipOver = document.querySelector("#flip-over");
+                if (!coin) {
+                    console.error("Coin element not found.");
+                    return;
+                }
+                let i = result || Math.floor(Math.random() * 2);
+                flipOver.style.display = "flex";
+                document.querySelector('.heads').textContent = heads || "Heads";
+                document.querySelector('.tails').textContent = tails || "Tails";
+                await new Promise(resolve => setTimeout(resolve, 50));
+                flipOver.style.opacity = "1";
+                setTimeout(() => {
+                    coin.style.animation = "none";
+
+                    if(i){
+                        setTimeout(function(){
+                            coin.style.animation = "spin-heads 1s forwards";
+                        }, 100);
+                        resolve("Heads");
+                    }
+                    else{
+                        setTimeout(function(){
+                            coin.style.animation = "spin-tails 1s forwards";
+                        }, 100);
+                        resolve("Tails");
+                    }
+
+                    setTimeout(() => {
+                        flipOver.style.opacity = "0";
+                        setTimeout(() => {
+                            flipOver.style.display = "none";
+                        }, 500);
+                    }, 3500);
+                }, 500);
+            });
+        }
+    </script>
 </body>
 </html>

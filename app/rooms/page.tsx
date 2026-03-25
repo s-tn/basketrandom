@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Basketball } from "@/components/basketball-icon"
 import React, { useEffect, useRef } from "react"
-import type { Room } from "@/app/lib/types";
+import type { Room } from "@/lib/types";
 
 // Default room values — rooms with these values don't show custom rule indicators
 const DEFAULTS = { scoreMax: 10, roundGoal: 3, gravity: 4, timeLimit: 0, tournament: false };

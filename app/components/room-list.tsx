@@ -6,8 +6,8 @@ import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getRooms } from "@/app/lib/rooms"
-import type { Room } from "@/app/lib/types"
+import { getRooms } from "@/lib/rooms"
+import type { Room } from "@/lib/types"
 
 const DEFAULTS = { scoreMax: 10, roundGoal: 3, gravity: 4, timeLimit: 0, tournament: false };
 
