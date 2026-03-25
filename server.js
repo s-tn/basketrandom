@@ -63,9 +63,9 @@ app.prepare().then(() => {
       res.setHeader('fly-region', process.env.FLY_REGION || 'offsite');
       await handle(req, res, parsedUrl);
     }).on('upgrade', (req, socket, head) => {
-        console.log(req.url);
-        if (req.url === '/_next/webpack-hmr')
-        socket.destroy();
+        if (req.url === '/_next/webpack-hmr') {
+            socket.destroy();
+        }
     })
     .listen(port, () => {
       console.log(` ▲ Ready on http://${hostname}:${port}`);

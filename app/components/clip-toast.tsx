@@ -32,7 +32,7 @@ export function ClipToast({
     a.href = url
     a.download = `clip-${Date.now()}.webm`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   async function handleShare() {

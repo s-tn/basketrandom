@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 
 export function PingIndicator({ping, status}: {
   ping: number | null
