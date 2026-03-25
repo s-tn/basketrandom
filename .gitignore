@@ -44,3 +44,4 @@ data/
 *.db-journal
 *.db-shm
 *.db-wal.playwright-mcp/
+prisma/dev.db-wal
