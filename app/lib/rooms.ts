@@ -70,10 +70,11 @@ export const getRoomById = async (id: string): Promise<Room | null> => {
 export const createRoom = async (params: CreateRoomParams): Promise<string> => {
   if (typeof window === "undefined") throw new Error("Cannot create room on server")
 
+  const id = Math.random().toString(36).substring(2, 10);
   const res = await fetch('/api/rooms', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
+    body: JSON.stringify({ ...params, id }),
   })
   if (!res.ok) throw new Error('Failed to create room')
   const data = await res.json()

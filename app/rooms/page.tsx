@@ -65,7 +65,7 @@ export default function RoomsPage() {
       } catch (e) {
         console.error(e);
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false); // Always clear loading, even if cancelled
       }
     }
     load();

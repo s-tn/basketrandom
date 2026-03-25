@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const sessionValue = sessionCookie.split('=')[1];
+    const sessionValue = sessionCookie.trim().substring('session='.length);
     const session = JSON.parse(Buffer.from(sessionValue, 'base64').toString());
     const player = await prisma.player.findUnique({ where: { id: session.id } });
     if (!player) return NextResponse.json({ guest: true });
