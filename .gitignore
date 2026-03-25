@@ -43,4 +43,4 @@ data/
 *.db
 *.db-journal
 *.db-shm
-*.db-wal
+*.db-wal.playwright-mcp/
