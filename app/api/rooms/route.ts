@@ -1,10 +1,22 @@
 import prisma from "@/lib/prisma"
 const notify = (event: string, data: Record<string, any>) => import("@/lib/discord").then(m => m.notify(event, data)).catch(() => {})
 
-export async function GET() {
-    return new Response(JSON.stringify(await prisma.room.findMany({ where: { private: false } })), {
+export async function GET(request: Request) {
+    const url = new URL(request.url);
+    const mode = url.searchParams.get('mode');
+    const status = url.searchParams.get('status'); // 'waiting' | 'playing' | 'all'
+    const sort = url.searchParams.get('sort') || 'newest';
+
+    const where: any = { private: false };
+    if (mode && mode !== 'all') where.mode = mode;
+    if (status === 'waiting') { where.started = false; where.winner = null; }
+    if (status === 'playing') { where.started = true; where.winner = null; }
+
+    const orderBy: any = sort === 'oldest' ? { createdAt: 'asc' } : { createdAt: 'desc' };
+
+    return new Response(JSON.stringify(await prisma.room.findMany({ where, orderBy })), {
         headers: { "Content-Type": "application/json" },
-    })
+    });
 }
 
 
