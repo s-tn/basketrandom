@@ -32,6 +32,7 @@ const NAV_GROUPS = [
       { href: "/clips", label: "Clips" },
       { href: "/replays", label: "Replays" },
       { href: "/stats", label: "Stats" },
+      { href: "/matches", label: "Match History" },
     ],
   },
   {
