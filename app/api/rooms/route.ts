@@ -44,27 +44,34 @@ export async function POST(request: Request) {
         );
     }
 
-    const newRoom = await prisma.room.create({
-        data: {
-            id,
-            name,
-            host,
-            createdAt: new Date(),
-            roundGoal: roundGoal || 3,
-            tournament: tournament || false,
-            scoreMax: scoreMax || 10,
-            gravity: gravity ?? 4,
-            timeLimit: timeLimit ?? 0,
-            mode: mode || '1v1',
-        },
-    });
+    try {
+        const newRoom = await prisma.room.create({
+            data: {
+                id,
+                name,
+                host,
+                createdAt: new Date(),
+                roundGoal: roundGoal || 3,
+                tournament: tournament || false,
+                scoreMax: scoreMax || 10,
+                gravity: gravity ?? 4,
+                timeLimit: timeLimit ?? 0,
+                mode: mode || '1v1',
+            },
+        });
 
-    notify('room_created', { host, name });
+        notify('room_created', { host, name });
 
-    return new Response(
-        JSON.stringify(newRoom),
-        { headers: { "Content-Type": "application/json" }, status: 201 }
-    )
+        return new Response(
+            JSON.stringify(newRoom),
+            { headers: { "Content-Type": "application/json" }, status: 201 }
+        )
+    } catch (e: any) {
+        if (e?.code === 'P2002') {
+            return new Response(JSON.stringify({ error: 'Room ID already exists' }), { status: 409, headers: { "Content-Type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ error: 'Failed to create room' }), { status: 500, headers: { "Content-Type": "application/json" } });
+    }
 }
 
 export async function PUT(request: Request) {
@@ -72,6 +79,13 @@ export async function PUT(request: Request) {
     const data = await request.json()
 
     const { id, host, name, players } = data;
+
+    if (data.name && (typeof data.name !== 'string' || data.name.length > 50)) {
+        return new Response(JSON.stringify({ error: 'Invalid name' }), { status: 400, headers: { "Content-Type": "application/json" } });
+    }
+    if (data.host && (typeof data.host !== 'string' || data.host.length > 30)) {
+        return new Response(JSON.stringify({ error: 'Invalid host' }), { status: 400, headers: { "Content-Type": "application/json" } });
+    }
 
     await prisma.room.update({
         where: { id }, // Specify the room to update by ID

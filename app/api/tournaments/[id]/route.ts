@@ -42,6 +42,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     case 'start': {
       const tournament = await prisma.tournament.findUnique({ where: { id } });
       if (!tournament) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      if (body.playerName && tournament.createdBy !== body.playerName) {
+        return NextResponse.json({ error: 'Only the creator can start the tournament' }, { status: 403 });
+      }
       if (tournament.format === 'bracket') {
         await generateBracket(id);
       } else {

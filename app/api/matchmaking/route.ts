@@ -54,6 +54,12 @@ async function createRoomForMatch(p1Name: string, p2Name: string): Promise<strin
 
 // POST — Join the matchmaking queue
 export async function POST(request: Request) {
+  // Remove stale entries older than 5 minutes
+  const now = Date.now();
+  while (queue.length > 0 && now - queue[0].joinedAt > 5 * 60 * 1000) {
+    queue.shift();
+  }
+
   const { playerName } = await request.json();
 
   if (!playerName) {

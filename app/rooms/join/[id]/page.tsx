@@ -26,8 +26,10 @@ export default function JoinRoomPage() {
         } else {
           setRoomName(data.name)
           setRoomHost(data.host)
-          if (data.opponent) {
-            setError("This room is already full.")
+          const maxPlayers = data.mode === '2v2' ? 4 : 2;
+          const currentPlayers = [data.host, data.opponent, data.player3, data.player4].filter(Boolean).length;
+          if (currentPlayers >= maxPlayers) {
+            setError("This room is already full");
           }
         }
         setRoomLoading(false)
