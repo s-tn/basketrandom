@@ -65,7 +65,7 @@ export default function Home() {
       </div>
 
       {/* Quick actions — large glass cards with gradients */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {QUICK_ACTIONS.map((action) => (
           <Link key={action.href} href={action.href}>
             <div className={`relative overflow-hidden rounded-xl p-6 text-white bg-gradient-to-br ${action.gradient} hover:scale-[1.02] transition-all duration-200 cursor-pointer shadow-lg`}>

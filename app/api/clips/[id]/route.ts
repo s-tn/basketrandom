@@ -26,8 +26,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const url = new URL(request.url);
+  const player = url.searchParams.get('player');
+
   const clip = await prisma.clip.findUnique({ where: { id } });
   if (!clip) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  // Only the clip owner can delete
+  if (player && clip.player && clip.player !== player) {
+    return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+  }
 
   try { await unlink(join(CLIPS_DIR, clip.filename)); } catch {}
   await prisma.clip.delete({ where: { id } });
