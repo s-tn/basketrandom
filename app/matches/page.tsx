@@ -36,17 +36,7 @@ function getWinnerName(match: Match): string | null {
   return match.winner === 0 ? match.host : (match.opponent ?? "Unknown")
 }
 
-function MatchCard({ match, playerFilter }: { match: Match; playerFilter: string }) {
-  const [replayId, setReplayId] = useState<string | null | undefined>(undefined)
-
-  useEffect(() => {
-    fetch(`/api/replays?roomId=${match.id}`)
-      .then((r) => r.json())
-      .then((replays: Replay[]) => {
-        setReplayId(replays.length > 0 ? replays[0].id : null)
-      })
-      .catch(() => setReplayId(null))
-  }, [match.id])
+function MatchCard({ match, playerFilter, replayId }: { match: Match; playerFilter: string; replayId: string | null | undefined }) {
 
   const winner = getWinnerName(match)
   const playerIsHost = playerFilter && match.host === playerFilter
@@ -162,6 +152,7 @@ function MatchCard({ match, playerFilter }: { match: Match; playerFilter: string
 
 export default function MatchHistoryPage() {
   const [matches, setMatches] = useState<Match[]>([])
+  const [replayMap, setReplayMap] = useState<Record<string, string | null>>({})
   const [playerFilter, setPlayerFilter] = useState("")
   const [inputValue, setInputValue] = useState("")
   const [offset, setOffset] = useState(0)
@@ -194,6 +185,21 @@ export default function MatchHistoryPage() {
         }
         setHasMore(data.length === LIMIT)
         setOffset(currentOffset + data.length)
+        const roomIds = data.map((m) => m.id).join(',')
+        if (roomIds) {
+          const nullEntries: Record<string, null> = {}
+          for (const m of data) nullEntries[m.id] = null
+          setReplayMap((prev) => ({ ...prev, ...nullEntries }))
+          try {
+            const replayRes = await fetch(`/api/replays?roomIds=${roomIds}`)
+            const replays: Replay[] = await replayRes.json()
+            const newEntries: Record<string, string> = {}
+            for (const r of replays) newEntries[r.roomId] = r.id
+            setReplayMap((prev) => ({ ...prev, ...newEntries }))
+          } catch {
+            // leave as null (no replay)
+          }
+        }
       } catch {
         // silently fail
       } finally {
@@ -291,7 +297,7 @@ export default function MatchHistoryPage() {
           </Card>
         ) : (
           matches.map((match) => (
-            <MatchCard key={match.id} match={match} playerFilter={playerFilter} />
+            <MatchCard key={match.id} match={match} playerFilter={playerFilter} replayId={match.id in replayMap ? replayMap[match.id] : undefined} />
           ))
         )}
       </div>

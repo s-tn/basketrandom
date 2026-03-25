@@ -6,8 +6,12 @@ export async function GET(request: Request) {
   const roomId = url.searchParams.get('roomId');
   const limit = parseInt(url.searchParams.get('limit') || '20');
 
+  const roomIds = url.searchParams.get('roomIds');
   const where: any = {};
   if (roomId) where.roomId = roomId;
+  if (roomIds) {
+    where.roomId = { in: roomIds.split(',') };
+  }
 
   const replays = await prisma.replay.findMany({
     where,

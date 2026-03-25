@@ -115,7 +115,7 @@ export function GameContainer({ roomId, players, ws, lobbySocket, playerSkins }:
     const iframe = document.getElementById("game-frame") as HTMLIFrameElement;
     if (iframe) {
       const cw: any = iframe.contentWindow;
-      cw.addEventListener("message", async (event: MessageEvent) => {
+      const messageHandler = async (event: MessageEvent) => {
         if (event.data.type === 'update') {
           //setMessage(event.data.data);
         }
@@ -251,8 +251,9 @@ export function GameContainer({ roomId, players, ws, lobbySocket, playerSkins }:
             iframe?.contentWindow?.postMessage({ type: 'applySkins', skins: skinsToSend }, '*');
           }
         }
-      });
-      cw.addEventListener('basket-key', (event: CustomEvent<{key: string, type: string}>) => {
+      };
+      cw.addEventListener("message", messageHandler);
+      const basketKeyHandler = (event: CustomEvent<{key: string, type: string}>) => {
         const { key, type } = event.detail;
 
         if (type === 'keyup') {
@@ -271,7 +272,12 @@ export function GameContainer({ roomId, players, ws, lobbySocket, playerSkins }:
             setW(true);
           }
         }
-      });
+      };
+      cw.addEventListener('basket-key', basketKeyHandler);
+      return () => {
+        cw.removeEventListener("message", messageHandler);
+        cw.removeEventListener('basket-key', basketKeyHandler);
+      };
     }
   }, [isLoading, ws])
 

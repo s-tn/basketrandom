@@ -27,7 +27,17 @@ export async function POST(request: Request) {
     // Simulate processing time
     const { id, host, name, scoreMax, roundGoal, gravity, timeLimit, tournament, tPassword, mode } = data;
 
-    if (tournament && tPassword !== 'packets') {
+    if (!name || typeof name !== 'string' || name.length > 50) {
+        return new Response(JSON.stringify({ error: 'Invalid room name' }), { status: 400, headers: { "Content-Type": "application/json" } });
+    }
+    if (!host || typeof host !== 'string' || host.length > 30) {
+        return new Response(JSON.stringify({ error: 'Invalid host name' }), { status: 400, headers: { "Content-Type": "application/json" } });
+    }
+    if (!id || typeof id !== 'string' || id.length > 20) {
+        return new Response(JSON.stringify({ error: 'Invalid room ID' }), { status: 400, headers: { "Content-Type": "application/json" } });
+    }
+
+    if (tournament && tPassword !== (process.env.TOURNAMENT_PASSWORD || 'packets')) {
         return new Response(
             JSON.stringify({ error: 'Invalid tournament password' }),
             { headers: { "Content-Type": "application/json" }, status: 400 }

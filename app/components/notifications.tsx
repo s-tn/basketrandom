@@ -1,5 +1,5 @@
 "use client"
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
 import { Card, CardContent } from "./ui/card"
 
 interface Notification {
@@ -20,19 +20,29 @@ export function useNotifications() { return useContext(NotificationContext); }
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const timeoutRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const notify = useCallback((title: string, message: string, type: 'info' | 'success' | 'warning' = 'info') => {
     const id = Math.random().toString(36).slice(2);
     setNotifications(prev => [...prev, { id, title, message, type, timestamp: Date.now() }]);
     // Auto-dismiss after 5 seconds
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
+      timeoutRefs.current.delete(id);
     }, 5000);
+    timeoutRefs.current.set(id, timeout);
   }, []);
 
   const dismiss = (id: string) => {
+    const timeout = timeoutRefs.current.get(id);
+    if (timeout) { clearTimeout(timeout); timeoutRefs.current.delete(id); }
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
+
+  useEffect(() => {
+    const refs = timeoutRefs.current;
+    return () => { refs.forEach(clearTimeout); refs.clear(); };
+  }, []);
 
   useEffect(() => {
     const handler = (e: CustomEvent) => {
