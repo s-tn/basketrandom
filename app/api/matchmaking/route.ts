@@ -56,8 +56,9 @@ async function createRoomForMatch(p1Name: string, p2Name: string): Promise<strin
 export async function POST(request: Request) {
   // Remove stale entries older than 5 minutes
   const now = Date.now();
-  while (queue.length > 0 && now - queue[0].joinedAt > 5 * 60 * 1000) {
-    queue.shift();
+  const cutoff = 5 * 60 * 1000;
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (now - queue[i].joinedAt > cutoff) queue.splice(i, 1);
   }
 
   const { playerName } = await request.json();

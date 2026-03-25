@@ -132,6 +132,8 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   useEffect(() => {
     if (!playerName) return;
 
+    startGameListenerRef.current = false;
+
     if (!socket) return setSocket(new ReconnectingWebSocket(`/api/lobby/${roomId}`));
 
     socket.onopen = () => {
@@ -219,7 +221,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     });
     } // end startGameListenerRef guard
 
-    socket.addEventListener("message", (event) => {
+    const startGameHandler = (event: MessageEvent) => {
       if (event.data.toString() === "pong") return;
       if (gameReady) return;
       const data = JSON.parse(event.data);
@@ -231,10 +233,12 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
         }));
         setEndpoint(data.gameSocket);
       }
-    });
+    };
+    socket.addEventListener("message", startGameHandler);
 
     return () => {
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      socket.removeEventListener("message", startGameHandler);
     };
   }, [roomId, playerName, socket]);
 

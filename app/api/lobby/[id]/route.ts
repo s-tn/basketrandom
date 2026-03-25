@@ -61,7 +61,8 @@ export async function SOCKET(
       if (message.toString() === "ping") {
         client.send("pong");
       } else {
-        const data = JSON.parse(message.toString());
+        let data;
+        try { data = JSON.parse(message.toString()); } catch { return; }
         if (data.type === 'room-info') {
           const info = await prisma.room.findFirst({
             where: {
@@ -106,7 +107,7 @@ export async function SOCKET(
           }
         }
         if (data.type === 'rematch-request') {
-          const lobbyClients = sockets.filter((s: any) => s.id === id && s !== client);
+          const lobbyClients = sockets.filter((s: any) => s.lobbyId === id && s !== client);
           for (const lobbyClient of lobbyClients) {
             if (lobbyClient.readyState === 1) {
               lobbyClient.send(JSON.stringify({ type: 'rematch-request' }));

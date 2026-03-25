@@ -356,11 +356,10 @@ async function createLobby(id: string) {
     await browser.page.evaluate(() => {
         let win: any = window;
         return new Promise<void>((resolve) => {
-            setInterval(() => {
+            const int = setInterval(() => {
                 if (win.soundsPlayed.includes('menu')) {
-                    setTimeout(() => {
-                        resolve();
-                    }, 1000);
+                    clearInterval(int);
+                    setTimeout(() => resolve(), 1000);
                 }
             }, 500);
         });
@@ -751,7 +750,7 @@ async function createLobby(id: string) {
                 }
             });
             await completeMatch(id, 0);
-            { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 0); }
+            { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 0).catch(() => {}); }
             // Record season result, ranked ELO, and check achievements
             try {
                 const room = await roomInfo();
@@ -768,7 +767,7 @@ async function createLobby(id: string) {
                     // Get total stats for achievement checking
                     const allRooms = await prisma.room.findMany({ where: { winner: { not: null }, OR: [{ host: winnerName }, { opponent: winnerName }] } });
                     const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
-                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0);
+                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0) + finalScore0;
                     checkMatchAchievements(winnerName, {
                         won: true, goalsScored: finalScore0, opponentGoals: finalScore1,
                         totalWins, totalGoals, seriesScore: [room.wins0, room.wins1],
@@ -805,7 +804,7 @@ async function createLobby(id: string) {
                 }
             });
             await completeMatch(id, 1);
-            { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 1); }
+            { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 1).catch(() => {}); }
             // Record season result, ranked ELO, and check achievements
             try {
                 const room = await roomInfo();
@@ -822,7 +821,7 @@ async function createLobby(id: string) {
                     // Get total stats for achievement checking
                     const allRooms = await prisma.room.findMany({ where: { winner: { not: null }, OR: [{ host: winnerName }, { opponent: winnerName }] } });
                     const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
-                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0);
+                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0) + finalScore1;
                     checkMatchAchievements(winnerName, {
                         won: true, goalsScored: finalScore1, opponentGoals: finalScore0,
                         totalWins, totalGoals, seriesScore: [room.wins1, room.wins0],

@@ -98,14 +98,14 @@ export function encodeDelta(seq: number, prev: GameState, curr: GameState): Buff
     return null;
   }
 
-  // Count changed fields in the bitmask
-  let changedCount = 0;
+  // Count bytes: each changed field is 2 bytes, except field 17 (ballHolder) which is 1
+  let changedBytes = 0;
   for (let i = 0; i < FIELD_COUNT; i++) {
-    if (bitmask & (1 << i)) changedCount++;
+    if (bitmask & (1 << i)) changedBytes += (i === 17) ? 1 : 2;
   }
 
-  // Header + uint32 bitmask + changed int16BE values + score0 + score1 + flags (uint8 each)
-  const size = HEADER_SIZE + 4 + changedCount * 2 + 3;
+  // Header + uint32 bitmask + changed field bytes + score0 + score1 + flags (uint8 each)
+  const size = HEADER_SIZE + 4 + changedBytes + 3;
   const buf = Buffer.allocUnsafe(size);
   writeHeader(buf, PACKET.DELTA, seq);
 
@@ -114,8 +114,14 @@ export function encodeDelta(seq: number, prev: GameState, curr: GameState): Buff
   let offset = HEADER_SIZE + 4;
   for (let i = 0; i < FIELD_COUNT; i++) {
     if (bitmask & (1 << i)) {
-      buf.writeInt16BE(currFields[i], offset);
-      offset += 2;
+      if (i === 17) {
+        // ballHolder is uint8, not int16
+        buf.writeUInt8(currFields[i], offset);
+        offset += 1;
+      } else {
+        buf.writeInt16BE(currFields[i], offset);
+        offset += 2;
+      }
     }
   }
 
