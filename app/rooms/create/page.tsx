@@ -28,9 +28,12 @@ export default function CreateRoomPage() {
       tPassword = prompt("Enter tournament mode password") || "";
     }
 
+    const hostName = e.currentTarget.playerName.value;
+    localStorage.setItem("playerName", hostName);
+
     createRoom({
       name: e.currentTarget.courtName.value,
-      host: e.currentTarget.playerName.value,
+      host: hostName,
       scoreMax: parseInt(e.currentTarget.score[1].value, 10) || 10,
       roundGoal: parseInt(e.currentTarget.bestof[1].value, 10) || 1,
       gravity: gravity,
