@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
 import ws from "ws";
 import { resolve } from 'node:path';
+import { log } from "@/lib/log";
 // Dynamic import to avoid build-time crash from native deps
 const puppeteerStream = () => import('puppeteer-stream');
 import fs from 'fs';
@@ -80,14 +81,14 @@ setInterval(() => {
         if (idx !== -1) sockets.splice(idx, 1);
     });
 
-    console.log(`Client connected to lobby: ${lobbyId} with goal: ${streamType}`);
+    log(`Client connected to lobby: ${lobbyId} with goal: ${streamType}`);
 
     client.addEventListener('message', (message) => {
         try {
             if (JSON.parse(message.data.toString()).type === 'ready') {
-                (client as any).ready = true; 
+                (client as any).ready = true;
                 (client as any).waitingRound = false;
-                console.log(`Client ${(client as any).id} in lobby ${lobbyId} is ready`);
+                log(`Client ${(client as any).id} in lobby ${lobbyId} is ready`);
             }
         } catch(e) {}
         if (message.data.toString() === 'ping') {
@@ -110,7 +111,7 @@ async function createLobby(id: string) {
     });
 
     if (!await roomInfo()) {
-        console.log('Room not found:', id);
+        log('Room not found:', id);
         return;
     }
 
@@ -151,7 +152,7 @@ async function createLobby(id: string) {
         return;
     }
 
-    console.log(`Starting game in lobby: ${id} (active pages: ${activePages.size + 1}/${MAX_PAGES})`);
+    log(`Starting game in lobby: ${id} (active pages: ${activePages.size + 1}/${MAX_PAGES})`);
     const browser = await run();
     const page = browser.page;
 
@@ -173,7 +174,7 @@ async function createLobby(id: string) {
         if (serverClipper) { serverClipper.destroy(); serverClipper = null; }
         // Close page
         page.close().catch(() => {});
-        console.log(`Game cleaned up: ${id} (active pages: ${activePages.size}/${MAX_PAGES})`);
+        log(`Game cleaned up: ${id} (active pages: ${activePages.size}/${MAX_PAGES})`);
     }
     // Declare variables that cleanupGame references (will be assigned later)
     let disconnectCheck: ReturnType<typeof setInterval> | null = null;
@@ -224,7 +225,7 @@ async function createLobby(id: string) {
             };
         });
     });
-    console.log('Game loaded in lobby:', id);
+    log('Game loaded in lobby:', id);
 
     clients().forEach((cli) => {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
@@ -365,7 +366,7 @@ async function createLobby(id: string) {
         });
     });
 
-    console.log(`Menu: ${id}`);
+    log(`Menu: ${id}`);
 
     await new Promise<void>((resolve) => {
         setTimeout(() => {
@@ -376,7 +377,7 @@ async function createLobby(id: string) {
     await browser.page.mouse.move((width / 2) + 100, height / 2);
     await browser.page.mouse.click((width / 2) + 100, height / 2);
 
-    console.log(`Game started in lobby: ${id}`);
+    log(`Game started in lobby: ${id}`);
 
     // Inject arm control override for 2v2 mode
     if (is2v2) {
@@ -443,7 +444,7 @@ async function createLobby(id: string) {
     await new Promise<void>((resolve) => {
         let int = setInterval(() => {
             if (clients().filter(cli => cli.ready).length >= requiredPlayers) {
-                console.log('All clients are ready, starting game');
+                log('All clients are ready, starting game');
                 resolve();
                 clearInterval(int);
             }
@@ -652,11 +653,11 @@ async function createLobby(id: string) {
     let lastState: GameState | null = null;
     let seq = 0;
 
-    console.log(`Starting transmission: ${id}`);
+    log(`Starting transmission: ${id}`);
 
     await new Promise<void>((resolve) => {
         setTimeout(() => {
-            console.log(`Transmission started: ${id}`);
+            log(`Transmission started: ${id}`);
             resolve();
         }, 3000);
     });
@@ -901,7 +902,7 @@ async function createLobby(id: string) {
                         }
                     });
                     if (clients().filter(cli => cli.ready && !cli.waitingRound).length >= requiredPlayers) {
-                        console.log('All clients are ready, starting game');
+                        log('All clients are ready, starting game');
                         clients().forEach(client => {
                             client.send('start');
                         });
@@ -1073,7 +1074,7 @@ const run = async () => {
     if (!browserEventsBound) {
         browserEventsBound = true;
         browser.on('disconnected', () => {
-            console.log('Browser disconnected');
+            log('Browser disconnected');
             browserPromise = null;
             browserEventsBound = false;
             // Clean up all active pages
@@ -1092,7 +1093,7 @@ const run = async () => {
     if (!signalHandlersBound) {
         signalHandlersBound = true;
         const shutdown = async () => {
-            console.log('Shutting down browser...');
+            log('Shutting down browser...');
             try { await browser.close(); } catch {}
             process.exit(0);
         };

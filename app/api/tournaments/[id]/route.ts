@@ -45,6 +45,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (body.playerName && tournament.createdBy !== body.playerName) {
         return NextResponse.json({ error: 'Only the creator can start the tournament' }, { status: 403 });
       }
+      const participantCount = await prisma.tournamentParticipant.count({ where: { tournamentId: id } });
+      if (participantCount < 2) {
+        return NextResponse.json({ error: 'Need at least 2 participants' }, { status: 400 });
+      }
       if (tournament.format === 'bracket') {
         await generateBracket(id);
       } else {

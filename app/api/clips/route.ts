@@ -9,8 +9,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const roomId = url.searchParams.get('roomId');
   const player = url.searchParams.get('player');
-  const limit = parseInt(url.searchParams.get('limit') || '20');
-  const offset = parseInt(url.searchParams.get('offset') || '0');
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100);
+  const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
   const where: any = { shared: true };
   if (roomId) where.roomId = roomId;
@@ -28,11 +28,14 @@ export async function POST(request: Request) {
   const file = formData.get('file') as File;
   const roomId = formData.get('roomId') as string;
   const player = formData.get('player') as string;
-  const duration = parseInt(formData.get('duration') as string || '10');
+  const duration = parseInt(formData.get('duration') as string || '10', 10);
   const auto = formData.get('auto') === 'true';
 
   if (!file || !roomId) {
     return NextResponse.json({ error: 'Missing file or roomId' }, { status: 400 });
+  }
+  if (roomId.includes('/') || roomId.includes('\\') || roomId.includes('..')) {
+    return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
   }
   if (file.size > 10 * 1024 * 1024) {
     return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 });

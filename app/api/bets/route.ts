@@ -46,10 +46,6 @@ export async function POST(request: Request) {
     update: {},
   });
 
-  if (wallet.balance < amount) {
-    return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
-  }
-
   // Check no existing bet on this room
   const existing = await prisma.bet.findFirst({
     where: { roomId, playerName, resolved: false },
@@ -58,11 +54,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Already bet on this match' }, { status: 400 });
   }
 
-  // Deduct balance and create bet
-  await prisma.wallet.update({
-    where: { playerName },
+  // Atomically deduct balance only if sufficient funds exist
+  const result = await prisma.wallet.updateMany({
+    where: { playerName, balance: { gte: amount } },
     data: { balance: { decrement: amount } },
   });
+  if (result.count === 0) {
+    return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+  }
 
   const bet = await prisma.bet.create({
     data: { roomId, playerName, predictedWinner, amount },

@@ -4,8 +4,8 @@ import prisma from "@/lib/prisma";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const player = url.searchParams.get('player');
-  const limit = parseInt(url.searchParams.get('limit') || '20');
-  const offset = parseInt(url.searchParams.get('offset') || '0');
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100);
+  const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
   const where: any = { winner: { not: null } };
   if (player) {

@@ -121,7 +121,7 @@ export async function SOCKET(
             await prisma.room.create({
               data: {
                 id: newId,
-                name: currentRoom.name + ' (Rematch)',
+                name: currentRoom.name.replace(/ \(Rematch\)$/, '') + ' (Rematch)',
                 host: currentRoom.host,
                 opponent: currentRoom.opponent,
                 scoreMax: currentRoom.scoreMax,
@@ -143,7 +143,8 @@ export async function SOCKET(
     });
   
     client.on("close", () => {
-      sockets.splice(sockets.indexOf(client), 1); // Remove the client from the sockets array
+      const idx = sockets.indexOf(client);
+      if (idx !== -1) sockets.splice(idx, 1); // Remove the client from the sockets array
       sockets.filter((s: any) => s.lobbyId === id).forEach((socket) => {
         socket.send(JSON.stringify({
           type: "conn",

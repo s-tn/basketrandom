@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const roomId = url.searchParams.get('roomId');
-  const limit = parseInt(url.searchParams.get('limit') || '20');
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100);
 
   const roomIds = url.searchParams.get('roomIds');
   const where: any = {};

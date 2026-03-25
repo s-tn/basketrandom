@@ -8,6 +8,10 @@ export async function generateBracket(tournamentId: string) {
     include: { participants: true },
   })
 
+  if (!tournament || tournament.participants.length < 2) {
+    throw new Error('Need at least 2 participants');
+  }
+
   const participants = [...tournament.participants]
 
   // Fisher-Yates shuffle for random seeding
