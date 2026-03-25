@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { ServiceWorkerRegister } from "@/components/sw-register"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
 import { Navbar } from "@/components/navbar"
+import { NotificationProvider } from "@/components/notifications"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -36,12 +37,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="min-h-screen bg-background transition-colors duration-300 court-texture">
-            <Navbar />
-            <main className="pb-8">{children}</main>
-          </div>
-          <ServiceWorkerRegister />
-          <OnlineHeartbeat />
+          <NotificationProvider>
+            <div className="min-h-screen bg-background transition-colors duration-300 court-texture">
+              <Navbar />
+              <main className="pb-8">{children}</main>
+            </div>
+            <ServiceWorkerRegister />
+            <OnlineHeartbeat />
+          </NotificationProvider>
         </ThemeProvider>
       </body>
     </html>
