@@ -767,7 +767,19 @@ async function createLobby(id: string) {
                     // Get total stats for achievement checking
                     const allRooms = await prisma.room.findMany({ where: { winner: { not: null }, OR: [{ host: winnerName }, { opponent: winnerName }] } });
                     const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
-                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0) + finalScore0;
+                    // Accumulate goals from rounds JSON (score0/score1 get reset each round)
+                    const totalGoals = allRooms.reduce((sum, r) => {
+                        try {
+                            const rnds = JSON.parse(r.rounds || '[]');
+                            return sum + rnds.reduce((s: number, rd: any) => s + (r.host === winnerName ? rd[1] : rd[2]), 0);
+                        } catch { return sum; }
+                    }, 0) + finalScore0;
+                    const loserTotalGoals = allRooms.reduce((sum, r) => {
+                        try {
+                            const rnds = JSON.parse(r.rounds || '[]');
+                            return sum + rnds.reduce((s: number, rd: any) => s + (r.host === loserName ? rd[1] : rd[2]), 0);
+                        } catch { return sum; }
+                    }, 0) + finalScore1;
                     checkMatchAchievements(winnerName, {
                         won: true, goalsScored: finalScore0, opponentGoals: finalScore1,
                         totalWins, totalGoals, seriesScore: [room.wins0, room.wins1],
@@ -775,7 +787,7 @@ async function createLobby(id: string) {
                     }).catch(() => {});
                     checkMatchAchievements(loserName, {
                         won: false, goalsScored: finalScore1, opponentGoals: finalScore0,
-                        totalWins: 0, totalGoals: 0, seriesScore: [room.wins1, room.wins0],
+                        totalWins: 0, totalGoals: loserTotalGoals, seriesScore: [room.wins1, room.wins0],
                         is2v2: room.mode === '2v2',
                     }).catch(() => {});
                 }
@@ -821,7 +833,18 @@ async function createLobby(id: string) {
                     // Get total stats for achievement checking
                     const allRooms = await prisma.room.findMany({ where: { winner: { not: null }, OR: [{ host: winnerName }, { opponent: winnerName }] } });
                     const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
-                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0) + finalScore1;
+                    const totalGoals = allRooms.reduce((sum, r) => {
+                        try {
+                            const rnds = JSON.parse(r.rounds || '[]');
+                            return sum + rnds.reduce((s: number, rd: any) => s + (r.host === winnerName ? rd[1] : rd[2]), 0);
+                        } catch { return sum; }
+                    }, 0) + finalScore1;
+                    const loserTotalGoals = allRooms.reduce((sum, r) => {
+                        try {
+                            const rnds = JSON.parse(r.rounds || '[]');
+                            return sum + rnds.reduce((s: number, rd: any) => s + (r.host === loserName ? rd[1] : rd[2]), 0);
+                        } catch { return sum; }
+                    }, 0) + finalScore0;
                     checkMatchAchievements(winnerName, {
                         won: true, goalsScored: finalScore1, opponentGoals: finalScore0,
                         totalWins, totalGoals, seriesScore: [room.wins1, room.wins0],
@@ -829,7 +852,7 @@ async function createLobby(id: string) {
                     }).catch(() => {});
                     checkMatchAchievements(loserName, {
                         won: false, goalsScored: finalScore0, opponentGoals: finalScore1,
-                        totalWins: 0, totalGoals: 0, seriesScore: [room.wins0, room.wins1],
+                        totalWins: 0, totalGoals: loserTotalGoals, seriesScore: [room.wins0, room.wins1],
                         is2v2: room.mode === '2v2',
                     }).catch(() => {});
                 }
@@ -851,7 +874,7 @@ async function createLobby(id: string) {
             }, 5000);
         } else {
             currentRound++;
-            assignSides(sideChoice, currentRound);
+            if (!is2v2) assignSides(sideChoice, currentRound);
 
             const roundPacket = encodeEvent(seq++, 'round', { round: rounds.length });
             for (const gamer of gamers) if (gamer.readyState === 1) gamer.send(roundPacket);

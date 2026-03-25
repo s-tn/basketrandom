@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { playerName, roomId, predictedWinner, amount } = await request.json();
 
-  if (!playerName || !roomId || predictedWinner === undefined || !amount || amount <= 0) {
+  if (!playerName || !roomId || (predictedWinner !== 0 && predictedWinner !== 1) || !amount || amount <= 0) {
     return NextResponse.json({ error: 'Invalid bet' }, { status: 400 });
   }
 
