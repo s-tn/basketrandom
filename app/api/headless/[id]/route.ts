@@ -100,7 +100,7 @@ setInterval(() => {
             lobbies[lobbyId] = [];
             createLobby(lobbyId);
         }
-        lobbies[lobbyId].push(ws);
+        lobbies[lobbyId].push(client);
     }
 }
 
@@ -118,7 +118,7 @@ async function createLobby(id: string) {
     const is2v2 = initialRoomData?.mode === '2v2';
     const requiredPlayers = is2v2 ? 4 : 2;
 
-    const playersReady = new Promise<any[]>((resolve) => {
+    const playersReady = new Promise<any[]>((resolve, reject) => {
         const interval = setInterval(() => {
             const clients = [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
             if (clients.length === requiredPlayers) {
@@ -126,9 +126,20 @@ async function createLobby(id: string) {
                 resolve(clients);
             }
         }, 500);
+        // Timeout after 5 minutes
+        setTimeout(() => {
+            clearInterval(interval);
+            reject(new Error('Lobby timeout'));
+        }, 5 * 60 * 1000);
     });
 
-    await playersReady;
+    try {
+        await playersReady;
+    } catch {
+        console.warn(`Lobby ${id} timed out waiting for players`);
+        delete lobbies[id];
+        return;
+    }
 
     const clients: () => any[] = () => [...sockets].filter(client => client.lobbyId === id && client.type === 'stream');
 
@@ -654,13 +665,14 @@ async function createLobby(id: string) {
     await resume();
 
     // Apply time limit per round if set
+    let startTimeLimitTimer: () => void = () => {};
     if (info.timeLimit > 0) {
         for (const gamer of gamers) {
             if (gamer.readyState === 1) {
                 gamer.send(JSON.stringify({ type: 'timelimit', seconds: info.timeLimit }));
             }
         }
-        const startTimeLimitTimer = () => setTimeout(async () => {
+        startTimeLimitTimer = () => setTimeout(async () => {
             const state = lastState;
             if (state && !paused) {
                 if (state.score0 > state.score1) await addRound(0);
@@ -738,6 +750,35 @@ async function createLobby(id: string) {
             });
             await completeMatch(id, 0);
             { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 0); }
+            // Record season result, ranked ELO, and check achievements
+            try {
+                const room = await roomInfo();
+                const winnerName = room.host;
+                const loserName = room.opponent;
+                if (winnerName && loserName) {
+                    const { recordSeasonResult } = await import("@/lib/seasons");
+                    recordSeasonResult(winnerName, loserName, room.score0, room.score1).catch(() => {});
+
+                    const { updateRankedElo } = await import("@/lib/ranked");
+                    updateRankedElo(winnerName, loserName).catch(() => {});
+
+                    const { checkMatchAchievements } = await import("@/lib/achievements");
+                    // Get total stats for achievement checking
+                    const allRooms = await prisma.room.findMany({ where: { winner: { not: null }, OR: [{ host: winnerName }, { opponent: winnerName }] } });
+                    const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
+                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0);
+                    checkMatchAchievements(winnerName, {
+                        won: true, goalsScored: room.score0, opponentGoals: room.score1,
+                        totalWins, totalGoals, seriesScore: [room.wins0, room.wins1],
+                        is2v2: room.mode === '2v2',
+                    }).catch(() => {});
+                    checkMatchAchievements(loserName, {
+                        won: false, goalsScored: room.score1, opponentGoals: room.score0,
+                        totalWins: 0, totalGoals: 0, seriesScore: [room.wins1, room.wins0],
+                        is2v2: room.mode === '2v2',
+                    }).catch(() => {});
+                }
+            } catch {}
             if (replayBuffer.length > 0) {
                 prisma.replay.create({
                     data: {
@@ -763,6 +804,35 @@ async function createLobby(id: string) {
             });
             await completeMatch(id, 1);
             { const { resolveBets } = await import("@/lib/bets"); resolveBets(id, 1); }
+            // Record season result, ranked ELO, and check achievements
+            try {
+                const room = await roomInfo();
+                const winnerName = room.opponent;
+                const loserName = room.host;
+                if (winnerName && loserName) {
+                    const { recordSeasonResult } = await import("@/lib/seasons");
+                    recordSeasonResult(winnerName, loserName, room.score1, room.score0).catch(() => {});
+
+                    const { updateRankedElo } = await import("@/lib/ranked");
+                    updateRankedElo(winnerName, loserName).catch(() => {});
+
+                    const { checkMatchAchievements } = await import("@/lib/achievements");
+                    // Get total stats for achievement checking
+                    const allRooms = await prisma.room.findMany({ where: { winner: { not: null }, OR: [{ host: winnerName }, { opponent: winnerName }] } });
+                    const totalWins = allRooms.filter(r => (r.host === winnerName && r.winner === 0) || (r.opponent === winnerName && r.winner === 1)).length;
+                    const totalGoals = allRooms.reduce((sum, r) => sum + (r.host === winnerName ? r.score0 : r.score1), 0);
+                    checkMatchAchievements(winnerName, {
+                        won: true, goalsScored: room.score1, opponentGoals: room.score0,
+                        totalWins, totalGoals, seriesScore: [room.wins1, room.wins0],
+                        is2v2: room.mode === '2v2',
+                    }).catch(() => {});
+                    checkMatchAchievements(loserName, {
+                        won: false, goalsScored: room.score0, opponentGoals: room.score1,
+                        totalWins: 0, totalGoals: 0, seriesScore: [room.wins0, room.wins1],
+                        is2v2: room.mode === '2v2',
+                    }).catch(() => {});
+                }
+            } catch {}
             if (replayBuffer.length > 0) {
                 prisma.replay.create({
                     data: {
@@ -820,6 +890,9 @@ async function createLobby(id: string) {
             await new Promise((resolve) => setTimeout(resolve, 3000));
 
             await resume();
+            if (info.timeLimit > 0) {
+                startTimeLimitTimer();
+            }
         }
     }
 

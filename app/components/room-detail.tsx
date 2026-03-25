@@ -35,6 +35,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   const [selectedSkin, setSelectedSkin] = useState('default');
   const [playerSkins, setPlayerSkins] = useState<Record<string, string>>({});
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startGameListenerRef = useRef(false);
 
   useEffect(() => {
     const storedSkin = localStorage.getItem('playerSkin');
@@ -186,6 +187,8 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
       setStatus("disconnected");
     }
 
+    if (!startGameListenerRef.current) {
+    startGameListenerRef.current = true;
     document.getElementById("start-game")?.addEventListener("click", async () => {
       setStarting(true);
 
@@ -212,6 +215,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
         });
       }
     });
+    } // end startGameListenerRef guard
 
     socket.addEventListener("message", (event) => {
       if (event.data.toString() === "pong") return;

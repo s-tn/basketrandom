@@ -169,6 +169,7 @@ export async function SOCKET(
       sockets.forEach((socket) => {
         socket.send(JSON.stringify({
           type: "conn",
+          roomId: id,
           sockets: sockets.filter((s: any) => s.id === id).length,
         }));
       });
