@@ -242,15 +242,9 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   }, []);
 
   function push(url: string) {
-    if (url === "/rooms") {
-      localStorage.removeItem("playerName");
-    }
     if (confirm('Are you sure you want to leave this page?')) {
-      localStorage.removeItem("playerName");
       window.onbeforeunload = null;
       return router.push(url);
-    } else {
-      return;
     }
   }
 

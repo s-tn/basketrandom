@@ -2,7 +2,6 @@ import { config } from 'dotenv';
 config(); // Load .env before anything else
 
 import { Server } from 'node:http';
-import { parse } from 'node:url';
 import next from 'next';
 import { setHttpServer, setWebSocketServer } from 'next-ws/server';
 import { WebSocketServer } from 'ws';
@@ -59,7 +58,7 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   httpServer
     .on('request', async (req, res) => {
-      const parsedUrl = parse(req.url, true);
+      const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
       res.setHeader('fly-region', process.env.FLY_REGION || 'offsite');
       await handle(req, res, parsedUrl);
     }).on('upgrade', (req, socket, head) => {

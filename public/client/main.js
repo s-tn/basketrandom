@@ -248,14 +248,17 @@ async function start() {
                     // Coin flip result — show animation then side pick if winner
                     const result = json.winner + 1; // 0-indexed to 1-indexed for flipCoin
                     window.postMessage({ type: 'coinflip', phase: 'start' }, '*');
-                    cw.flipCoin(json.players[0], json.players[1], "Coin Flip", result, () => {
-                        window.postMessage({
-                            type: 'coinflip',
-                            phase: 'end',
-                            youWon: json.youWon,
-                            winnerName: json.winnerName,
-                            players: json.players,
-                        }, '*');
+                    cw.flipCoin(json.players[0], json.players[1], "Coin Flip", result).then(() => {
+                        // flipCoin returns a Promise — use .then() since the callback param is never invoked
+                        setTimeout(() => {
+                            window.postMessage({
+                                type: 'coinflip',
+                                phase: 'end',
+                                youWon: json.youWon,
+                                winnerName: json.winnerName,
+                                players: json.players,
+                            }, '*');
+                        }, 3000); // Wait for animation to fully complete
                     });
                 }
                 if (json.type === 'side-assigned') {

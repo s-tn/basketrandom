@@ -133,7 +133,7 @@ export default function TournamentDetailPage() {
     await fetch(`/api/tournaments/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "start" }),
+      body: JSON.stringify({ action: "start", playerName }),
     })
     fetchTournament()
     setActionLoading(false)
