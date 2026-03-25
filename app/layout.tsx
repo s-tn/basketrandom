@@ -38,7 +38,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NotificationProvider>
-            <div className="min-h-screen bg-background transition-colors duration-300 court-texture">
+            <div className="min-h-screen bg-background transition-colors duration-300 ambient-bg">
               <Navbar />
               <main className="pb-8">{children}</main>
             </div>

@@ -60,9 +60,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         {notifications.map(n => (
           <Card
             key={n.id}
-            className={`shadow-lg cursor-pointer transition-all animate-in slide-in-from-right-5 ${
-              n.type === 'success' ? 'border-green-500/50' :
-              n.type === 'warning' ? 'border-yellow-500/50' : 'border-primary/50'
+            className={`glass-card shadow-lg cursor-pointer transition-all animate-in slide-in-from-right-5 ${
+              n.type === 'success' ? 'border-green-500/30' :
+              n.type === 'warning' ? 'border-yellow-500/30' : 'border-primary/30'
             }`}
             onClick={() => dismiss(n.id)}
           >

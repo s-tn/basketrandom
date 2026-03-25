@@ -61,7 +61,7 @@ export function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-40 w-full glass-nav">
       <div className="container flex h-14 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
@@ -77,7 +77,7 @@ export function Navbar() {
                 {group.label}
               </button>
               <div className="absolute top-full left-0 pt-1 hidden group-hover:block z-50">
-                <div className="bg-popover border rounded-md shadow-md py-1 min-w-[140px]">
+                <div className="glass-card rounded-lg shadow-lg py-1 min-w-[140px]">
                   {group.items.map((item) => (
                     <Link
                       key={item.href}
@@ -143,7 +143,7 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t bg-background pb-4">
+        <div className="md:hidden border-t border-white/10 glass pb-4">
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="px-4 pt-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{group.label}</p>
