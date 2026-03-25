@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ServiceWorkerRegister } from "@/components/sw-register"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
+import { Navbar } from "@/components/navbar"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -36,10 +37,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <div className="min-h-screen bg-background transition-colors duration-300 court-texture">
-            <div className="fixed top-4 right-4 z-50">
-              <ThemeToggle />
-            </div>
-            <main>{children}</main>
+            <Navbar />
+            <main className="pb-8">{children}</main>
           </div>
           <ServiceWorkerRegister />
           <OnlineHeartbeat />
