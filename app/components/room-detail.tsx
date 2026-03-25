@@ -49,16 +49,8 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
     if (storedName) {
       setPlayerName(storedName)
     } else {
-      const name = prompt("Enter your name to join the game:")
-      if (name) {
-        localStorage.setItem("playerName", name)
-        setPlayerName(name)
-        location.reload();
-      } else {
-        alert("You must enter a name to join the game.")
-        router.push("/rooms")
-        return
-      }
+      router.push("/login?redirect=" + encodeURIComponent(`/rooms/${roomId}`))
+      return
     }
 
     // Join the room

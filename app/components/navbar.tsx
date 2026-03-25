@@ -105,15 +105,14 @@ export function Navbar() {
               <span className="text-sm font-medium hidden sm:inline">{playerName}</span>
             </Link>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => {
-              const name = prompt("Enter your player name:")
-              if (name) {
-                localStorage.setItem("playerName", name)
-                setPlayerName(name)
-              }
-            }}>
-              Set Name
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/register">Register</Link>
+              </Button>
+            </div>
           )}
 
           <Link

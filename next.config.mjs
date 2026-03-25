@@ -5,7 +5,7 @@ const nextConfig = {
         ]
       },
       webpack: (config) => {
-        config.externals.push('puppeteer', 'puppeteer-core', 'puppeteer-stream', 'discord.js', '@discordjs/voice', 'twitch-stream-video', 'prism-media', 'ws');
+        config.externals.push('puppeteer', 'puppeteer-core', 'puppeteer-stream', 'discord.js', '@discordjs/voice', 'twitch-stream-video', 'prism-media', 'ws', 'bcryptjs');
         return config;
       }
 };
