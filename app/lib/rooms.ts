@@ -1,5 +1,7 @@
 import type { Room, CreateRoomParams } from "./types"
-import prisma from "./prisma"
+
+// Dynamic import to avoid bundling Prisma into client
+const getPrisma = () => import("./prisma").then(m => m.default);
 
 // Helper to convert a Prisma Room row to the Room interface
 function toRoom(r: any): Room {
@@ -32,6 +34,7 @@ function toRoom(r: any): Room {
 // Get all rooms
 export const getRooms = async (): Promise<Room[]> => {
   if (typeof window === "undefined") {
+    const prisma = await getPrisma();
     const rooms = await prisma.room.findMany()
     return rooms.map(toRoom)
   }
@@ -48,6 +51,7 @@ export const getRooms = async (): Promise<Room[]> => {
 // Get a room by ID
 export const getRoomById = async (id: string): Promise<Room | null> => {
   if (typeof window === "undefined") {
+    const prisma = await getPrisma();
     const room = await prisma.room.findUnique({ where: { id } })
     return room ? toRoom(room) : null
   }
