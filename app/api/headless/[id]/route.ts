@@ -930,6 +930,8 @@ async function createLobby(id: string) {
     const replayBuffer: Array<{ t: number; s: number[] }> = [];
     const replayStart = Date.now();
 
+    let scoreLock = false;
+
     await page.exposeFunction('__sendState', (flatState: number[]) => {
         if (paused) return;
 
@@ -959,14 +961,17 @@ async function createLobby(id: string) {
             if (serverClipper) serverClipper.trigger().catch(() => {});
 
             // Check for round win
-            roomInfo().then(async (room) => {
-                if (!room) return;
-                if (state.score0 >= room.scoreMax) {
-                    await addRound(0);
-                } else if (state.score1 >= room.scoreMax) {
-                    await addRound(1);
-                }
-            });
+            if (!scoreLock) {
+                scoreLock = true;
+                roomInfo().then(async (room) => {
+                    if (!room) return;
+                    if (state.score0 >= room.scoreMax) {
+                        await addRound(0);
+                    } else if (state.score1 >= room.scoreMax) {
+                        await addRound(1);
+                    }
+                }).catch(() => {}).finally(() => { scoreLock = false; });
+            }
         }
 
         // Send binary to clients

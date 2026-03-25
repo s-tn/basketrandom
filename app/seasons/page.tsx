@@ -123,16 +123,10 @@ export default function SeasonsPage() {
     setPastSeasons(finished)
     setPastRewards(allRewards)
 
-    // Fetch standings for each past season
+    // Standings for past seasons are not available via the current API;
+    // reward winners (already fetched) are shown instead.
     const standingsMap: Record<string, SeasonStanding[]> = {}
-    await Promise.all(
-      finished.map(async season => {
-        const res = await fetch(`/api/seasons?type=current`)
-        // We already have current; for past seasons fetch via the all-seasons endpoint
-        // standings for inactive seasons are stored, re-use the rewards as proxy
-        standingsMap[season.id] = []
-      })
-    )
+    finished.forEach(season => { standingsMap[season.id] = [] })
     setPastStandings(standingsMap)
     setPastLoading(false)
   }

@@ -18,5 +18,3 @@ export default function RoomsLayout({
   )
 }
 
-import Link from "next/link"
-

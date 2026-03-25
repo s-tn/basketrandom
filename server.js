@@ -32,7 +32,7 @@ if (dev) {
     return context.watch().then(() => {
       console.log('Game bundle watching.');
     });
-  });
+  }).catch(err => console.error('esbuild error:', err));
 } else {
   esbuild.build({
     entryPoints: ['./public/client/main.js'],
@@ -40,7 +40,7 @@ if (dev) {
     outfile: './public/game.bundle.js',
     minify: true,
     sourcemap: true
-  }).then(() => console.log('Game bundle built.'));
+  }).then(() => console.log('Game bundle built.')).catch(err => console.error('esbuild error:', err));
 }
 
 //import './game/index.js'

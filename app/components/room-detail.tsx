@@ -107,18 +107,8 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   const handleLeaveRoom = async () => {
     try {
       if (playerName === room.host) {
-        const rooms = await getRooms()
-        const roomIndex = rooms.findIndex((room) => room.id === roomId)
-        if (roomIndex !== -1) {
-          return await fetch(`/api/rooms/${roomId}`, {
-            method: "DELETE",
-          }).then(res => {
-            if (!res.ok) {
-              throw new Error("Failed to delete room")
-            }
-            return push("/rooms")
-          });
-        }
+        await fetch(`/api/rooms/${roomId}?host=${encodeURIComponent(playerName)}`, { method: "DELETE" });
+        return push("/rooms");
       }
       await leaveRoom(roomId, playerName)
       push("/rooms")

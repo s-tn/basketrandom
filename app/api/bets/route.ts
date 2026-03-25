@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   }
 
   // Check wallet
-  const wallet = await prisma.wallet.upsert({
+  await prisma.wallet.upsert({
     where: { playerName },
     create: { playerName, balance: 1000 },
     update: {},
@@ -54,18 +54,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Already bet on this match' }, { status: 400 });
   }
 
-  // Atomically deduct balance only if sufficient funds exist
-  const result = await prisma.wallet.updateMany({
-    where: { playerName, balance: { gte: amount } },
-    data: { balance: { decrement: amount } },
-  });
-  if (result.count === 0) {
-    return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+  let bet;
+  try {
+    bet = await prisma.$transaction(async (tx) => {
+      const result = await tx.wallet.updateMany({
+        where: { playerName, balance: { gte: amount } },
+        data: { balance: { decrement: amount } },
+      });
+      if (result.count === 0) throw new Error('Insufficient balance');
+      return tx.bet.create({ data: { roomId, playerName, predictedWinner, amount } });
+    });
+  } catch (err: any) {
+    if (err?.message === 'Insufficient balance') {
+      return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+    }
+    throw err;
   }
-
-  const bet = await prisma.bet.create({
-    data: { roomId, playerName, predictedWinner, amount },
-  });
 
   return NextResponse.json(bet, { status: 201 });
 }

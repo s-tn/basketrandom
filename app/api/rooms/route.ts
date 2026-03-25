@@ -73,35 +73,3 @@ export async function POST(request: Request) {
         return new Response(JSON.stringify({ error: 'Failed to create room' }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 }
-
-export async function PUT(request: Request) {
-    // Parse the incoming request body
-    const data = await request.json()
-
-    const { id, host, name, players } = data;
-
-    if (data.name && (typeof data.name !== 'string' || data.name.length > 50)) {
-        return new Response(JSON.stringify({ error: 'Invalid name' }), { status: 400, headers: { "Content-Type": "application/json" } });
-    }
-    if (data.host && (typeof data.host !== 'string' || data.host.length > 30)) {
-        return new Response(JSON.stringify({ error: 'Invalid host' }), { status: 400, headers: { "Content-Type": "application/json" } });
-    }
-
-    await prisma.room.update({
-        where: { id }, // Specify the room to update by ID
-        data: {
-            name, // Update the name of the room
-            host, // Update the host if necessary
-            opponent: players && players.length > 1 ? players[1] : null, // Update the opponent if provided
-        },
-    })
-
-    // Respond with a success message indicating update
-    return new Response(
-        JSON.stringify({ success: true }),
-        {
-            headers: { "Content-Type": "application/json" },
-            status: 200,
-        }
-    )
-}
