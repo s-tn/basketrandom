@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Settings } from "lucide-react"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import { ThemeToggle } from "./theme-toggle"
@@ -40,6 +41,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/achievements", label: "Achievements" },
       { href: "/strategy", label: "Strategy" },
+      { href: "/settings", label: "Settings" },
     ],
   },
 ]
@@ -113,6 +115,15 @@ export function Navbar() {
               Set Name
             </Button>
           )}
+
+          <Link
+            href="/settings"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            title="Settings"
+            aria-label="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </Link>
 
           <ThemeToggle />
 
