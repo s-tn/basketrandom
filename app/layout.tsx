@@ -14,16 +14,17 @@ export const metadata = {
   title: "Basket Random",
   description: "Create or join basketball courts to play with other ballers",
   manifest: '/manifest.json',
-  themeColor: '#FF6B35',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent' as const,
     title: 'Basket Random',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#FF6B35',
 }
 
 export default function RootLayout({
