@@ -117,12 +117,15 @@ model Friendship {
 }
 
 model Player {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  elo       Int      @default(1000)
-  wins      Int      @default(0)
-  losses    Int      @default(0)
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  name          String   @unique
+  discordId     String?  @unique
+  discordName   String?
+  discordAvatar String?
+  elo           Int      @default(1000)
+  wins          Int      @default(0)
+  losses        Int      @default(0)
+  createdAt     DateTime @default(now())
 }
 
 model Achievement {
