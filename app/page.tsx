@@ -1,106 +1,125 @@
 "use client"
 
 import Link from "next/link"
-
-const QUICK_ACTIONS = [
-  { href: "/rooms/create", label: "Play", sub: "Create a room", gradient: "from-orange-500 to-amber-500" },
-  { href: "/ranked", label: "Ranked", sub: "ELO matchmaking", gradient: "from-violet-500 to-purple-500" },
-  { href: "/rooms", label: "Browse", sub: "Join a game", gradient: "from-cyan-500 to-blue-500" },
-]
-
-const SECTIONS = [
-  {
-    title: "Play",
-    items: [
-      { href: "/rooms/create", label: "Create Room", icon: "➕" },
-      { href: "/rooms", label: "Join Room", icon: "🚪" },
-      { href: "/ranked", label: "Ranked", icon: "⚔️" },
-      { href: "/offline", label: "Offline", icon: "🎮" },
-      { href: "/practice", label: "Practice", icon: "🏋️" },
-    ],
-  },
-  {
-    title: "Compete",
-    items: [
-      { href: "/tournaments", label: "Tournaments", icon: "🏆" },
-      { href: "/seasons", label: "Seasons", icon: "📅" },
-      { href: "/stats", label: "Leaderboard", icon: "📊" },
-      { href: "/achievements", label: "Achievements", icon: "🎖️" },
-    ],
-  },
-  {
-    title: "Social",
-    items: [
-      { href: "/friends", label: "Friends", icon: "👥" },
-      { href: "/clips", label: "Clips", icon: "🎬" },
-      { href: "/replays", label: "Replays", icon: "⏪" },
-      { href: "/matches", label: "History", icon: "📋" },
-    ],
-  },
-  {
-    title: "Tools",
-    items: [
-      { href: "/strategy", label: "Strategy", icon: "✏️" },
-      { href: "/settings", label: "Settings", icon: "⚙️" },
-    ],
-  },
-]
+import { useEffect, useState } from "react"
 
 export default function Home() {
-  return (
-    <div className="container max-w-4xl mx-auto py-16 px-4 space-y-12">
-      {/* Hero */}
-      <div className="text-center space-y-4">
-        <div className="inline-block">
-          <div className="basketball-texture w-16 h-16 flex items-center justify-center mx-auto mb-4 glow-primary">
-            <span className="text-2xl">🏀</span>
-          </div>
-        </div>
-        <h1 className="text-5xl font-bold tracking-tight">
-          Basket <span className="text-primary">Random</span>
-        </h1>
-        <p className="text-muted-foreground text-lg max-w-md mx-auto">
-          Real-time multiplayer basketball
-        </p>
-      </div>
+  const [name, setName] = useState<string | null>(null)
+  useEffect(() => { setName(localStorage.getItem("playerName")) }, [])
 
-      {/* Quick actions — large glass cards with gradients */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {QUICK_ACTIONS.map((action) => (
-          <Link key={action.href} href={action.href}>
-            <div className={`relative overflow-hidden rounded-xl p-6 text-white bg-gradient-to-br ${action.gradient} hover:scale-[1.02] transition-all duration-200 cursor-pointer shadow-lg`}>
-              <div className="absolute inset-0 bg-white/10 backdrop-blur-sm" />
-              <div className="relative">
-                <p className="font-bold text-xl">{action.label}</p>
-                <p className="text-white/70 text-sm mt-1">{action.sub}</p>
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-12 space-y-16">
+
+      {/* ─── Hero ─── */}
+      <section className="text-center space-y-5 hero-glow">
+        <div className="inline-flex items-center gap-2 tag mb-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          Live
+        </div>
+        <h1 className="text-6xl sm:text-7xl font-bold tracking-tighter leading-[0.9]">
+          BASKET<br />
+          <span className="text-primary">RANDOM</span>
+        </h1>
+        <p className="text-muted-foreground text-base max-w-sm mx-auto">
+          Real-time multiplayer basketball. Create a room, invite a friend, play.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Link href="/rooms/create">
+            <button className="bg-primary text-primary-foreground font-semibold text-sm px-6 py-2.5 rounded-lg hover:brightness-110 transition-all shadow-lg shadow-primary/20">
+              Play Now
+            </button>
+          </Link>
+          <Link href="/rooms">
+            <button className="border border-border text-foreground font-medium text-sm px-6 py-2.5 rounded-lg hover:bg-muted transition-all">
+              Browse Rooms
+            </button>
+          </Link>
+        </div>
+      </section>
+
+      <div className="court-line" />
+
+      {/* ─── Quick Actions ─── */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          { href: "/ranked", label: "RANKED", sub: "ELO matchmaking", bg: "bg-gradient-to-br from-orange-600 to-red-600" },
+          { href: "/tournaments", label: "TOURNEYS", sub: "Brackets & round-robin", bg: "bg-gradient-to-br from-violet-600 to-indigo-600" },
+          { href: "/practice", label: "PRACTICE", sub: "Training drills", bg: "bg-gradient-to-br from-emerald-600 to-teal-600" },
+        ].map((a) => (
+          <Link key={a.href} href={a.href}>
+            <div className={`action-card ${a.bg} p-5 text-white cursor-pointer hover:scale-[1.01] transition-transform`}>
+              <div className="relative z-10">
+                <p className="font-bold text-lg tracking-tight">{a.label}</p>
+                <p className="text-white/60 text-xs mt-0.5">{a.sub}</p>
               </div>
             </div>
           </Link>
         ))}
-      </div>
+      </section>
 
-      {/* Sections — glass cards */}
-      {SECTIONS.map((section) => (
-        <div key={section.title} className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground px-1">
-            {section.title}
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-            {section.items.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <div className="glass-card rounded-xl px-4 py-3.5 transition-glass cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg opacity-70 group-hover:opacity-100 transition-opacity">
-                      {item.icon}
-                    </span>
-                    <span className="font-medium text-sm">{item.label}</span>
+      {/* ─── Navigation Grid ─── */}
+      <section className="space-y-8">
+        {[
+          {
+            title: "PLAY",
+            items: [
+              { href: "/rooms/create", label: "Create Room", desc: "Start a match" },
+              { href: "/rooms", label: "Join Room", desc: "Browse open games" },
+              { href: "/ranked", label: "Ranked", desc: "ELO matchmaking" },
+              { href: "/offline", label: "Offline", desc: "Play vs AI" },
+              { href: "/practice", label: "Practice", desc: "Training drills" },
+            ],
+          },
+          {
+            title: "COMPETE",
+            items: [
+              { href: "/tournaments", label: "Tournaments", desc: "Bracket & round-robin" },
+              { href: "/seasons", label: "Seasons", desc: "Weekly leaderboards" },
+              { href: "/stats", label: "Leaderboard", desc: "Player rankings" },
+              { href: "/achievements", label: "Achievements", desc: "Unlock badges" },
+            ],
+          },
+          {
+            title: "SOCIAL",
+            items: [
+              { href: "/friends", label: "Friends", desc: "Online & invite" },
+              { href: "/clips", label: "Clips", desc: "Highlights" },
+              { href: "/replays", label: "Replays", desc: "Watch matches" },
+              { href: "/matches", label: "History", desc: "Past games" },
+            ],
+          },
+          {
+            title: "TOOLS",
+            items: [
+              { href: "/strategy", label: "Strategy Board", desc: "Draw plays" },
+              { href: "/settings", label: "Settings", desc: "Preferences" },
+            ],
+          },
+        ].map((section) => (
+          <div key={section.title}>
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-3">
+              {section.title}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {section.items.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <div className="border border-border/60 rounded-lg p-3 card-lift cursor-pointer group bg-card hover:border-primary/30">
+                    <p className="text-sm font-medium group-hover:text-primary transition-colors">{item.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </section>
+
+      {/* ─── Footer ─── */}
+      <footer className="border-t border-border/50 pt-6 pb-8 text-center">
+        <p className="text-xs text-muted-foreground">
+          Basket Random — real-time multiplayer basketball
+        </p>
+      </footer>
     </div>
   )
 }

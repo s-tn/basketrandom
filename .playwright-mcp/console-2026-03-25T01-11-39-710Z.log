@@ -1,0 +1,57 @@
+[    1237ms] [WARNING] %c%s%c  ⚠ Unsupported metadata themeColor is configured in metadata export in /rooms/create. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2647
+[    1237ms] [WARNING] %c%s%c  ⚠ Unsupported metadata viewport is configured in metadata export in /rooms/create. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2647
+[    1244ms] Error: PrismaClient is unable to run in this browser environment, or has been bundled for the browser (running in ``).
+If this is unexpected, please open an issue: https://pris.ly/prisma-prisma-bug-report
+    at Object.get (webpack-internal:///(app-pages-browser)/./node_modules/.prisma/client/index-browser.js:315:15)
+    at eval (webpack-internal:///(app-pages-browser)/./app/lib/prisma.ts:9:8)
+    at (app-pages-browser)/./app/lib/prisma.ts (http://localhost:9000/_next/static/chunks/app/rooms/create/page.js:84:1)
+    at options.factory (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:712:31)
+    at __webpack_require__ (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:37:33)
+    at fn (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:369:21)
+    at eval (webpack-internal:///(app-pages-browser)/./app/lib/rooms.ts:11:65)
+    at (app-pages-browser)/./app/lib/rooms.ts (http://localhost:9000/_next/static/chunks/app/rooms/create/page.js:95:1)
+    at options.factory (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:712:31)
+    at __webpack_require__ (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:37:33)
+    at fn (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:369:21)
+    at eval (webpack-internal:///(app-pages-browser)/./app/rooms/create/page.tsx:13:68)
+    at (app-pages-browser)/./app/rooms/create/page.tsx (http://localhost:9000/_next/static/chunks/app/rooms/create/page.js:117:1)
+    at options.factory (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:712:31)
+    at __webpack_require__ (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:37:33)
+    at fn (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:369:21)
+[    1367ms] Error: PrismaClient is unable to run in this browser environment, or has been bundled for the browser (running in ``).
+If this is unexpected, please open an issue: https://pris.ly/prisma-prisma-bug-report
+    at Object.get (webpack-internal:///(app-pages-browser)/./node_modules/.prisma/client/index-browser.js:315:15)
+    at eval (webpack-internal:///(app-pages-browser)/./app/lib/prisma.ts:9:8)
+    at (app-pages-browser)/./app/lib/prisma.ts (http://localhost:9000/_next/static/chunks/app/rooms/create/page.js:84:1)
+    at options.factory (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:712:31)
+    at __webpack_require__ (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:37:33)
+    at fn (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:369:21)
+    at eval (webpack-internal:///(app-pages-browser)/./app/lib/rooms.ts:11:65)
+    at (app-pages-browser)/./app/lib/rooms.ts (http://localhost:9000/_next/static/chunks/app/rooms/create/page.js:95:1)
+    at options.factory (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:712:31)
+    at __webpack_require__ (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:37:33)
+    at fn (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:369:21)
+    at eval (webpack-internal:///(app-pages-browser)/./app/rooms/create/page.tsx:13:68)
+    at (app-pages-browser)/./app/rooms/create/page.tsx (http://localhost:9000/_next/static/chunks/app/rooms/create/page.js:117:1)
+    at options.factory (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:712:31)
+    at __webpack_require__ (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:37:33)
+    at fn (http://localhost:9000/_next/static/chunks/webpack.js?v=1774401100556:369:21)
+    at requireModule (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:111:27)
+    at initializeModuleChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1058:21)
+    at getOutlinedModel (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1310:11)
+    at parseModelString (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1520:15)
+    at Object.eval (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2274:18)
+    at JSON.parse (<anonymous>)
+    at initializeModelChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1034:26)
+    at resolveModelChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1011:12)
+    at resolveModel (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1579:11)
+    at processFullStringRow (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2268:11)
+    at processFullBinaryRow (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2213:7)
+    at progress (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2459:17)
+    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:303:55)
+    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:452:73)
+[    1410ms] [ERROR] WebSocket connection to 'ws://localhost:9000/_next/webpack-hmr' failed: Connection closed before receiving a handshake response @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/utils/use-websocket.js:41
+[    1875ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9000/images/icon-192.png:0
+[    1886ms] [WARNING] Error while trying to use the following icon from the Manifest: http://localhost:9000/images/icon-192.png (Download error or resource isn't a valid image) @ http://localhost:9000/rooms/create:0

@@ -1,18 +1,14 @@
 import type React from "react"
 import "./globals.css"
-import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { ServiceWorkerRegister } from "@/components/sw-register"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
 import { Navbar } from "@/components/navbar"
 import { NotificationProvider } from "@/components/notifications"
 
-const inter = Inter({ subsets: ["latin"] })
-
 export const metadata = {
   title: "Basket Random",
-  description: "Create or join basketball courts to play with other ballers",
+  description: "Real-time multiplayer basketball",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -24,7 +20,7 @@ export const metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#FF6B35',
+  themeColor: '#0f1114',
 }
 
 export default function RootLayout({
@@ -34,12 +30,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <NotificationProvider>
-            <div className="min-h-screen bg-background transition-colors duration-300 ambient-bg">
+            <div className="min-h-screen bg-background">
               <Navbar />
-              <main className="pb-8">{children}</main>
+              <main>{children}</main>
             </div>
             <ServiceWorkerRegister />
             <OnlineHeartbeat />
@@ -49,4 +45,3 @@ export default function RootLayout({
     </html>
   )
 }
-
