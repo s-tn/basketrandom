@@ -75,7 +75,6 @@ export default function AchievementsPage() {
         />
         <Button
           variant="outline"
-          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
           onClick={handleSearch}
         >
           Search
@@ -123,15 +122,6 @@ export default function AchievementsPage() {
         </div>
       )}
 
-      <div className="flex justify-center pt-4">
-        <Button
-          variant="outline"
-          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
-          onClick={() => (window.location.href = "/")}
-        >
-          Back to Home
-        </Button>
-      </div>
     </div>
   )
 }

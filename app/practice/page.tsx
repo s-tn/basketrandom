@@ -227,13 +227,6 @@ export default function PracticePage() {
           })}
         </div>
 
-        <Button
-          variant="outline"
-          className="border-primary text-primary hover:bg-accent"
-          onClick={() => (window.location.href = "/")}
-        >
-          Back to Home
-        </Button>
       </div>
     )
   }

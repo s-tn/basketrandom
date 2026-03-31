@@ -188,14 +188,6 @@ export default function StatsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-start">
-        <button
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => (window.location.href = "/")}
-        >
-          ← Back to Home
-        </button>
-      </div>
     </div>
   );
 }

@@ -86,7 +86,7 @@ export default function ClipsPage() {
   }
 
   return (
-    <div className="container py-10 space-y-6">
+    <div className="container max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -94,13 +94,6 @@ export default function ClipsPage() {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Browse highlight clips from recent games</p>
         </div>
-        <Button
-          variant="outline"
-          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary w-fit"
-          onClick={() => (window.location.href = "/")}
-        >
-          Back to Home
-        </Button>
       </div>
 
       <div className="max-w-sm">
@@ -151,7 +144,7 @@ export default function ClipsPage() {
             <div className="flex justify-center pt-4">
               <Button
                 variant="outline"
-                className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary px-8"
+                className="px-8"
                 onClick={handleLoadMore}
                 disabled={loading}
               >

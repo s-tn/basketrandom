@@ -149,8 +149,6 @@ export default function SeasonsPage() {
     if (tab === "trophies") fetchTrophies(trimmed)
   }
 
-  const btnClass =
-    "border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
   const activeBtnClass =
     "bg-primary text-white border-primary hover:bg-primary/80 dark:bg-primary dark:text-primary-foreground dark:border-primary"
 
@@ -171,7 +169,7 @@ export default function SeasonsPage() {
             key={t}
             variant="outline"
             size="sm"
-            className={tab === t ? activeBtnClass : btnClass}
+            className={tab === t ? activeBtnClass : ""}
             onClick={() => setTab(t)}
           >
             {t === "current" && "Current Season"}
@@ -364,7 +362,7 @@ export default function SeasonsPage() {
               onChange={e => setPlayerInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handlePlayerSearch()}
             />
-            <Button variant="outline" className={btnClass} onClick={handlePlayerSearch}>
+            <Button variant="outline" onClick={handlePlayerSearch}>
               Search
             </Button>
           </div>
@@ -415,15 +413,6 @@ export default function SeasonsPage() {
         </div>
       )}
 
-      <div className="flex justify-center pt-4">
-        <Button
-          variant="outline"
-          className={btnClass}
-          onClick={() => (window.location.href = "/")}
-        >
-          Back to Home
-        </Button>
-      </div>
     </div>
   )
 }

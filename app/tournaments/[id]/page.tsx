@@ -182,11 +182,10 @@ export default function TournamentDetailPage() {
 
   return (
     <ErrorBoundary>
-    <div className="container py-8 max-w-4xl mx-auto space-y-6">
+    <div className="container max-w-5xl mx-auto px-4 py-8 space-y-6">
       {/* Back nav */}
       <Button
         variant="outline"
-        className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
         onClick={() => (window.location.href = "/tournaments")}
       >
         Back to Tournaments

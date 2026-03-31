@@ -159,18 +159,10 @@ export default function StrategyPage() {
   return (
     <div className="flex flex-col h-screen bg-[#1a1a2e] text-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#FF6B35]/30 shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => (window.location.href = '/')}
-            className="text-[#FF6B35] hover:text-[#ff8c5a] transition-colors text-sm font-medium"
-          >
-            &larr; Back
-          </button>
-          <h1 className="text-lg font-bold tracking-tight">
-            Strategy <span className="text-[#FF6B35]">Board</span>
-          </h1>
-        </div>
+      <div className="flex items-center px-4 py-2 border-b border-[#FF6B35]/30 shrink-0">
+        <h1 className="text-lg font-bold tracking-tight">
+          Strategy <span className="text-[#FF6B35]">Board</span>
+        </h1>
       </div>
 
       {/* Toolbar */}

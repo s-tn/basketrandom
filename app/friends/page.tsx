@@ -102,31 +102,20 @@ export default function FriendsPage() {
 
   if (!playerName) {
     return (
-      <div className="container flex flex-col items-center justify-center min-h-screen py-12 space-y-4">
+      <div className="container max-w-5xl mx-auto px-4 py-8 flex flex-col items-center space-y-4">
         <p className="text-muted-foreground text-lg">
           No player name found. Join a room first to set your name.
         </p>
-        <Button variant="outline" onClick={() => (window.location.href = '/')}>
-          Back to Home
-        </Button>
       </div>
     )
   }
 
   return (
-    <div className="container flex flex-col items-center min-h-screen py-12 space-y-8 max-w-lg mx-auto">
+    <div className="container max-w-5xl mx-auto px-4 py-8 space-y-8">
       <div className="w-full flex items-center justify-between">
         <h1 className="text-3xl font-bold">
           Friends <span className="text-primary">List</span>
         </h1>
-        <Button
-          size="sm"
-          variant="outline"
-          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
-          onClick={() => (window.location.href = '/')}
-        >
-          Home
-        </Button>
       </div>
 
       <p className="w-full text-sm text-muted-foreground">

@@ -67,11 +67,10 @@ export default function CreateTournamentPage() {
   }
 
   return (
-    <div className="container py-8 max-w-lg mx-auto">
+    <div className="container max-w-5xl mx-auto px-4 py-8">
       <div className="mb-6">
         <Button
           variant="outline"
-          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
           onClick={() => (window.location.href = "/tournaments")}
         >
           Back to Tournaments

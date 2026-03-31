@@ -160,12 +160,9 @@ export default function RankedPage() {
   const losses = playerData?.losses ?? 0
 
   return (
-    <div className="container py-8 max-w-3xl mx-auto space-y-8">
+    <div className="container max-w-5xl mx-auto px-4 py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Ranked</h1>
-        <Button variant="outline" size="sm" onClick={() => (window.location.href = "/")}>
-          Back
-        </Button>
       </div>
 
       {/* Player identity */}

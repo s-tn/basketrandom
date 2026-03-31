@@ -44,17 +44,10 @@ export default function TournamentsPage() {
   }, [])
 
   return (
-    <div className="container py-8 max-w-4xl mx-auto">
+    <div className="container max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Tournaments</h1>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
-            onClick={() => (window.location.href = "/")}
-          >
-            Home
-          </Button>
           <Button
             className="bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => (window.location.href = "/tournaments/create")}

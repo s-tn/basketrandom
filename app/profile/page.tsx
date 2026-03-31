@@ -77,9 +77,6 @@ export default function ProfilePage() {
     window.location.href = "/"
   }
 
-  const btnClass =
-    "border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
-
   if (loading) {
     return (
       <div className="container max-w-2xl mx-auto py-20 text-center text-muted-foreground">
@@ -127,7 +124,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex justify-center">
-          <Button variant="outline" className={btnClass} onClick={() => window.history.back()}>
+          <Button variant="outline" onClick={() => window.history.back()}>
             Back
           </Button>
         </div>
@@ -276,14 +273,11 @@ export default function ProfilePage() {
 
       {/* Quick links */}
       <div className="flex flex-wrap gap-3 justify-center pt-2">
-        <Button variant="outline" className={btnClass} onClick={() => (window.location.href = "/ranked")}>
+        <Button variant="outline" onClick={() => (window.location.href = "/ranked")}>
           Ranked Play
         </Button>
-        <Button variant="outline" className={btnClass} onClick={() => (window.location.href = "/seasons")}>
+        <Button variant="outline" onClick={() => (window.location.href = "/seasons")}>
           Seasons
-        </Button>
-        <Button variant="outline" className={btnClass} onClick={() => (window.location.href = "/")}>
-          Home
         </Button>
       </div>
     </div>
