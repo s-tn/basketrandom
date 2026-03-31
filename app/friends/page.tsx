@@ -122,7 +122,7 @@ export default function FriendsPage() {
         <Button
           size="sm"
           variant="outline"
-          className="border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
           onClick={() => (window.location.href = '/')}
         >
           Home
@@ -145,7 +145,7 @@ export default function FriendsPage() {
           />
           <Button
             onClick={handleAdd}
-            className="bg-basketball-orange hover:bg-basketball-darkOrange text-white"
+            className="bg-primary hover:bg-primary/80 text-white"
           >
             Add
           </Button>

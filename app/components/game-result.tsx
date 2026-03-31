@@ -18,12 +18,12 @@ export default function GameResult({
 
     return (
         <div className={"flex flex-col border-r border-r-input last:border-none flex-1" + (completed ? "" : " opacity-30")}>
-            <div className="flex-1 text-white px-4 py-4 flex flex-row items-center justify-center">
+            <div className="flex-1 text-primary-foreground px-4 py-4 flex flex-row items-center justify-center">
                 <div className="flex flex-row gap-2 items-center justify-center">
                     <span className={"text-xs font-light" + (p1lost ? " text-gray-200/75" : "")}>{players[0]}</span>
                     <span className={"text-md" + (p1lost ? " text-gray-200/75" : "")}>{score[0]}</span>
                 </div>
-                <div className="w-0.5 h-8 bg-white mx-2" />
+                <div className="w-0.5 h-8 bg-primary-foreground mx-2" />
                 <div className="flex flex-row gap-2 items-center justify-center">
                     <span className={"text-md" + (p2lost ? " text-gray-200/75" : "")}>{score[1]}</span>
                     <span className={"text-xs font-light" + (p2lost ? " text-gray-200/75" : "")}>{players[1]}</span>

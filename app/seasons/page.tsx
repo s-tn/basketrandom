@@ -150,9 +150,9 @@ export default function SeasonsPage() {
   }
 
   const btnClass =
-    "border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+    "border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
   const activeBtnClass =
-    "bg-basketball-orange text-white border-basketball-orange hover:bg-basketball-darkOrange dark:bg-primary dark:text-primary-foreground dark:border-primary"
+    "bg-primary text-white border-primary hover:bg-primary/80 dark:bg-primary dark:text-primary-foreground dark:border-primary"
 
   return (
     <div className="container max-w-4xl mx-auto py-12 px-4 space-y-8">
@@ -189,7 +189,7 @@ export default function SeasonsPage() {
           ) : currentSeason ? (
             <>
               {/* Season info card */}
-              <div className="rounded-xl border border-basketball-orange/40 bg-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="rounded-xl border border-primary/40 bg-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">
                     Active Season
@@ -204,7 +204,7 @@ export default function SeasonsPage() {
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">
                     Time Remaining
                   </p>
-                  <p className="text-xl font-semibold text-basketball-orange dark:text-primary">
+                  <p className="text-xl font-semibold text-primary dark:text-primary">
                     {formatTimeRemaining(currentSeason.endDate)}
                   </p>
                 </div>
@@ -252,7 +252,7 @@ export default function SeasonsPage() {
                             key={s.id}
                             className={`border-b last:border-0 transition-colors ${
                               i < 3
-                                ? "bg-basketball-orange/5 dark:bg-primary/5"
+                                ? "bg-primary/5 dark:bg-primary/5"
                                 : "hover:bg-muted/20"
                             }`}
                           >
@@ -333,7 +333,7 @@ export default function SeasonsPage() {
                       {topThree.map(r => (
                         <div
                           key={r.id}
-                          className="flex items-center gap-2 rounded-lg border border-basketball-orange/30 bg-basketball-orange/5 dark:bg-primary/5 px-3 py-2"
+                          className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/5 px-3 py-2"
                         >
                           <span className="text-xl">{r.badge}</span>
                           <div>
@@ -389,7 +389,7 @@ export default function SeasonsPage() {
               {trophies.map(r => (
                 <div
                   key={r.id}
-                  className="rounded-xl border border-basketball-orange/40 bg-card p-5 flex flex-col gap-2 shadow-sm"
+                  className="rounded-xl border border-primary/40 bg-card p-5 flex flex-col gap-2 shadow-sm"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-4xl" role="img" aria-label={r.title}>

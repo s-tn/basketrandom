@@ -54,8 +54,8 @@ export default function CreateRoomPage() {
     <div className="container max-w-md py-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="basketball-texture w-10 h-10 flex items-center justify-center shadow-md">
-            <Basketball className="w-8 h-8 text-white" />
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md">
+            <Basketball className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold">Create Room</h1>
         </div>
@@ -64,10 +64,10 @@ export default function CreateRoomPage() {
         </Button>
       </div>
 
-      <div className="basketball-divider w-full mb-8"></div>
+      <div className="court-line w-full mb-8"></div>
 
       <div className="border rounded-lg overflow-hidden dark:border-muted bg-background">
-        <div className="bg-basketball-orange text-white p-4">
+        <div className="bg-primary text-primary-foreground p-4">
           <h2 className="text-xl font-semibold">New Room</h2>
           <p className="text-sm opacity-80">Set up your game</p>
         </div>
@@ -79,7 +79,7 @@ export default function CreateRoomPage() {
               id="courtName"
               required
               placeholder="Enter room name"
-              className="border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30"
+              className="border-primary/50 focus-visible:ring-primary dark:border-primary/30"
             />
           </div>
 
@@ -89,14 +89,14 @@ export default function CreateRoomPage() {
               id="playerName"
               required
               placeholder="Enter your player name"
-              className="border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30"
+              className="border-primary/50 focus-visible:ring-primary dark:border-primary/30"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="score">Score to Win</Label>
             <Select required name="score">
-              <SelectTrigger id="score" className="w-full border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30">
+              <SelectTrigger id="score" className="w-full border-primary/50 focus-visible:ring-primary dark:border-primary/30">
                 <SelectValue placeholder="Choose..." />
               </SelectTrigger>
               <SelectContent>
@@ -112,7 +112,7 @@ export default function CreateRoomPage() {
           <div className="space-y-2">
             <Label htmlFor="bestof">Best of #</Label>
             <Select required name="bestof">
-              <SelectTrigger id="bestof" className="w-full border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30">
+              <SelectTrigger id="bestof" className="w-full border-primary/50 focus-visible:ring-primary dark:border-primary/30">
                 <SelectValue placeholder="Choose..." />
               </SelectTrigger>
               <SelectContent>
@@ -135,7 +135,7 @@ export default function CreateRoomPage() {
               step={1}
               value={gravity}
               onChange={(e) => setGravity(parseInt(e.target.value, 10))}
-              className="w-full accent-basketball-orange"
+              className="w-full accent-primary"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>0 (none)</span>
@@ -147,7 +147,7 @@ export default function CreateRoomPage() {
           <div className="space-y-2">
             <Label htmlFor="timeLimit">Time Limit per Round</Label>
             <Select name="timeLimit" defaultValue="0">
-              <SelectTrigger id="timeLimit" className="w-full border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30">
+              <SelectTrigger id="timeLimit" className="w-full border-primary/50 focus-visible:ring-primary dark:border-primary/30">
                 <SelectValue placeholder="Choose..." />
               </SelectTrigger>
               <SelectContent>
@@ -163,7 +163,7 @@ export default function CreateRoomPage() {
           <div className="space-y-2">
             <Label htmlFor="gameMode">Game Mode</Label>
             <Select required name="gameMode" defaultValue="1v1">
-              <SelectTrigger id="gameMode" className="w-full border-basketball-orange/50 focus-visible:ring-basketball-orange dark:border-primary/30">
+              <SelectTrigger id="gameMode" className="w-full border-primary/50 focus-visible:ring-primary dark:border-primary/30">
                 <SelectValue placeholder="Choose mode..." />
               </SelectTrigger>
               <SelectContent>
@@ -184,7 +184,7 @@ export default function CreateRoomPage() {
           </div>
 
           <div className="pt-4">
-            <Button className="w-full bg-basketball-orange hover:bg-basketball-darkOrange">Create Room</Button>
+            <Button className="w-full bg-primary hover:bg-primary/90">Create Room</Button>
           </div>
         </form>
       </div>

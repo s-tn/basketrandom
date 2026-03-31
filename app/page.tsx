@@ -1,11 +1,6 @@
-"use client"
-
 import Link from "next/link"
-import { useEffect, useState } from "react"
 
 export default function Home() {
-  const [name, setName] = useState<string | null>(null)
-  useEffect(() => { setName(localStorage.getItem("playerName")) }, [])
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12 space-y-16">

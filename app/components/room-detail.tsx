@@ -307,7 +307,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
                               <span>{player}</span>
                               <Badge variant="secondary" className="ml-2 text-xs">{roleLabel}</Badge>
                               {player === room.host && <Badge variant="outline" className="ml-2">Host</Badge>}
-                              {player === playerName && <Badge variant="outline" className="ml-2 text-basketball-orange">You</Badge>}
+                              {player === playerName && <Badge variant="outline" className="ml-2 text-primary">You</Badge>}
                             </div>
                           ) : (
                             <div key={slotIdx} className="flex items-center p-2 border rounded-md border-dashed">
@@ -330,7 +330,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
                               <div className={`w-2 h-2 mr-2 rounded-full` + (connStates[slotIdx] ? ' bg-green-500' : ' bg-red-500')}></div>
                               <span>{player}</span>
                               <Badge variant="secondary" className="ml-2 text-xs">{roleLabel}</Badge>
-                              {player === playerName && <Badge variant="outline" className="ml-2 text-basketball-orange">You</Badge>}
+                              {player === playerName && <Badge variant="outline" className="ml-2 text-primary">You</Badge>}
                             </div>
                           ) : (
                             <div key={slotIdx} className="flex items-center p-2 border rounded-md border-dashed">
@@ -354,7 +354,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
                           </Badge>
                         )}
                         { player === playerName && (
-                          <Badge variant="outline" className="ml-2 text-basketball-orange">
+                          <Badge variant="outline" className="ml-2 text-primary">
                             You
                           </Badge>
                         )}

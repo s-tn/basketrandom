@@ -216,7 +216,7 @@ export default function PracticePage() {
                   )}
                   <Button
                     size="sm"
-                    className="w-full bg-basketball-orange hover:bg-basketball-darkOrange text-white border-0"
+                    className="w-full bg-primary hover:bg-primary/80 text-white border-0"
                     onClick={(e) => { e.stopPropagation(); startDrill(d.id) }}
                   >
                     Start
@@ -229,7 +229,7 @@ export default function PracticePage() {
 
         <Button
           variant="outline"
-          className="border-basketball-orange text-basketball-orange hover:bg-accent"
+          className="border-primary text-primary hover:bg-accent"
           onClick={() => (window.location.href = "/")}
         >
           Back to Home
@@ -304,7 +304,7 @@ export default function PracticePage() {
 
             <div className="flex gap-3">
               <Button
-                className="flex-1 bg-basketball-orange hover:bg-basketball-darkOrange text-white border-0"
+                className="flex-1 bg-primary hover:bg-primary/80 text-white border-0"
                 onClick={tryAgain}
               >
                 Try Again

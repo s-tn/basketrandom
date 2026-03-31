@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -57,7 +55,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: var(--font-sans), system-ui, sans-serif;
   }
 }
 
@@ -127,8 +125,14 @@
 
 /* Mono font for stats/numbers */
 .font-mono-game {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono), monospace;
   letter-spacing: -0.02em;
+}
+
+/* Basketball icon background — used by hero and room headers */
+.basketball-texture {
+  background-color: hsl(var(--primary));
+  border-radius: 9999px;
 }
 
 /* Tag / pill */

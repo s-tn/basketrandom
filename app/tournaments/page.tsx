@@ -50,7 +50,7 @@ export default function TournamentsPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            className="border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+            className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
             onClick={() => (window.location.href = "/")}
           >
             Home

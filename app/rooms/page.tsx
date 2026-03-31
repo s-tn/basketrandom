@@ -89,36 +89,29 @@ export default function RoomsPage() {
 
   const filterBtn = (active: boolean) =>
     `px-3 py-1.5 text-sm rounded-md border transition-colors ${active
-      ? 'bg-basketball-orange text-white border-basketball-orange'
-      : 'bg-background border-muted text-muted-foreground hover:border-basketball-orange hover:text-foreground'}`;
+      ? 'bg-primary text-primary-foreground border-primary'
+      : 'bg-background border-muted text-muted-foreground hover:border-primary hover:text-foreground'}`;
 
   return (
     <div className="container py-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="basketball-texture w-10 h-10 flex items-center justify-center shadow-md">
-            <Basketball className="w-8 h-8 text-white" />
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md">
+            <Basketball className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold">Available Rooms</h1>
         </div>
         <div className="space-x-2">
-          <Button asChild className="bg-basketball-orange hover:bg-basketball-darkOrange">
+          <Button asChild className="bg-primary hover:bg-primary/90">
             <Link href="/rooms/create">Create Room</Link>
           </Button>
-          <Button variant="outline" onClick={() => {
-            const code = prompt("Enter the room code to join:");
-            if (!code?.trim()) {
-              alert("You must enter a room code to join.");
-              return;
-            }
-            return location.href = `/rooms/${code}`;
-          }}>
-            Join Room
+          <Button variant="outline" asChild>
+            <Link href="/rooms/join">Join by Code</Link>
           </Button>
         </div>
       </div>
 
-      <div className="basketball-divider w-full mb-6"></div>
+      <div className="court-line w-full mb-6"></div>
 
       {/* Filter toolbar */}
       <div className="flex flex-wrap gap-4 mb-6 items-center">
@@ -188,7 +181,7 @@ export default function RoomsPage() {
               key={id}
               className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow dark:border-muted bg-background"
             >
-              <div className="bg-basketball-orange text-white p-4">
+              <div className="bg-primary text-primary-foreground p-4">
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="text-xl font-semibold leading-tight">{name} <span className="opacity-80 text-sm font-light">#{id}</span></h2>
                   <span className="shrink-0 text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{mode.toUpperCase()}</span>
@@ -220,20 +213,8 @@ export default function RoomsPage() {
                 </div>
                 <div className="flex justify-end gap-2">
                   {status === 'waiting' && (
-                    <Button size="sm" disabled={players.length >= maxPlayers} onClick={() => {
-                      const username = prompt("Enter your name to join the game:");
-                      if (!username?.trim()) {
-                        alert("You must enter a name to join the game.");
-                        return;
-                      }
-                      if (username === host) {
-                        alert("You cannot join your own room as the creator.");
-                        return;
-                      }
-                      localStorage.setItem('playerName', username);
-                      location.href = `/rooms/${id}`;
-                    }}>
-                      {players.length >= maxPlayers ? 'Full' : 'Join'}
+                    <Button size="sm" disabled={players.length >= maxPlayers} asChild={players.length < maxPlayers}>
+                      {players.length >= maxPlayers ? <span>Full</span> : <Link href={`/rooms/join/${id}`}>Join</Link>}
                     </Button>
                   )}
                   {status === 'playing' && (
@@ -254,7 +235,7 @@ export default function RoomsPage() {
           <div className="col-span-full border border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-muted-foreground dark:border-muted/50">
             <Basketball className="w-12 h-12 mb-2 text-muted-foreground" />
             <p className="mb-4">No rooms match your filters.</p>
-            <Button asChild className="bg-basketball-orange hover:bg-basketball-darkOrange">
+            <Button asChild className="bg-primary hover:bg-primary/90">
               <Link href="/rooms/create">Create a Room</Link>
             </Button>
           </div>

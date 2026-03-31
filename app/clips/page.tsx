@@ -96,7 +96,7 @@ export default function ClipsPage() {
         </div>
         <Button
           variant="outline"
-          className="border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary w-fit"
+          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary w-fit"
           onClick={() => (window.location.href = "/")}
         >
           Back to Home
@@ -151,7 +151,7 @@ export default function ClipsPage() {
             <div className="flex justify-center pt-4">
               <Button
                 variant="outline"
-                className="border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary px-8"
+                className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary px-8"
                 onClick={handleLoadMore}
                 disabled={loading}
               >

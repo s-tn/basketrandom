@@ -75,7 +75,7 @@ export default function AchievementsPage() {
         />
         <Button
           variant="outline"
-          className="border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
           onClick={handleSearch}
         >
           Search
@@ -98,7 +98,7 @@ export default function AchievementsPage() {
               key={a.id}
               className={`rounded-xl border p-5 flex flex-col gap-2 transition-all ${
                 a.unlocked
-                  ? "bg-card border-basketball-orange/40 shadow-sm"
+                  ? "bg-card border-primary/40 shadow-sm"
                   : "bg-muted/30 border-muted opacity-60 grayscale"
               }`}
             >
@@ -126,7 +126,7 @@ export default function AchievementsPage() {
       <div className="flex justify-center pt-4">
         <Button
           variant="outline"
-          className="border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+          className="border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
           onClick={() => (window.location.href = "/")}
         >
           Back to Home

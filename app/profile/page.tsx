@@ -78,7 +78,7 @@ export default function ProfilePage() {
   }
 
   const btnClass =
-    "border-basketball-orange text-basketball-orange hover:bg-accent hover:text-basketball-darkOrange dark:text-primary dark:border-primary"
+    "border-primary text-primary hover:bg-accent hover:text-primary/80 dark:text-primary dark:border-primary"
 
   if (loading) {
     return (
@@ -102,7 +102,7 @@ export default function ProfilePage() {
         <div className="rounded-xl border bg-card p-8 flex flex-col items-center gap-6 shadow-sm">
           {/* Guest identity */}
           <div className="flex flex-col items-center gap-2">
-            <div className="w-20 h-20 rounded-full bg-basketball-orange/20 dark:bg-primary/20 flex items-center justify-center text-3xl font-bold text-basketball-orange dark:text-primary">
+            <div className="w-20 h-20 rounded-full bg-primary/20 dark:bg-primary/20 flex items-center justify-center text-3xl font-bold text-primary dark:text-primary">
               {guestName ? guestName[0].toUpperCase() : "?"}
             </div>
             <p className="text-lg font-semibold">{guestName || "Guest"}</p>
@@ -162,10 +162,10 @@ export default function ProfilePage() {
             <img
               src={user.discordAvatar}
               alt={user.name}
-              className="w-20 h-20 rounded-full border-2 border-basketball-orange/40 dark:border-primary/40 object-cover shrink-0"
+              className="w-20 h-20 rounded-full border-2 border-primary/40 dark:border-primary/40 object-cover shrink-0"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-basketball-orange/20 dark:bg-primary/20 flex items-center justify-center text-3xl font-bold text-basketball-orange dark:text-primary shrink-0">
+            <div className="w-20 h-20 rounded-full bg-primary/20 dark:bg-primary/20 flex items-center justify-center text-3xl font-bold text-primary dark:text-primary shrink-0">
               {initials}
             </div>
           )}
@@ -174,7 +174,7 @@ export default function ProfilePage() {
           <div className="flex-1 text-center sm:text-left space-y-1">
             <p className="text-xl font-bold">{user.name}</p>
             <p className={`text-sm font-semibold ${color}`}>{rank}</p>
-            <p className="text-2xl font-mono font-bold text-basketball-orange dark:text-primary">
+            <p className="text-2xl font-mono font-bold text-primary dark:text-primary">
               {elo} <span className="text-sm font-normal text-muted-foreground">ELO</span>
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function ProfilePage() {
                 key={a.id}
                 className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
                   a.unlocked
-                    ? "border-basketball-orange/40 bg-basketball-orange/5 dark:bg-primary/5"
+                    ? "border-primary/40 bg-primary/5 dark:bg-primary/5"
                     : "border-muted/40 bg-muted/10 opacity-50"
                 }`}
               >
@@ -237,7 +237,7 @@ export default function ProfilePage() {
                   <p className="font-medium text-sm truncate">{a.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{a.description}</p>
                   {a.unlocked && a.unlockedAt && (
-                    <p className="text-xs text-basketball-orange dark:text-primary mt-0.5">
+                    <p className="text-xs text-primary dark:text-primary mt-0.5">
                       {new Date(a.unlockedAt).toLocaleDateString()}
                     </p>
                   )}
@@ -261,7 +261,7 @@ export default function ProfilePage() {
             {rewards.map(r => (
               <div
                 key={r.id}
-                className="flex items-center gap-2 rounded-lg border border-basketball-orange/30 bg-basketball-orange/5 dark:bg-primary/5 px-3 py-2"
+                className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/5 px-3 py-2"
               >
                 <span className="text-3xl">{r.badge}</span>
                 <div>

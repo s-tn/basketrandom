@@ -51,8 +51,6 @@ const config: Config = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
-  			'basketball-orange': '#FF6B35',
-  			'basketball-darkOrange': '#E55A25',
   		}
   	}
   },
