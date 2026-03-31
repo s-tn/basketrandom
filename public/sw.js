@@ -1,42 +1,9 @@
-const CACHE_NAME = 'basket-random-v2';
-const STATIC_ASSETS = [
-  '/game.html',
-  '/play.html',
-  '/game.bundle.js',
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  // Never intercept navigation requests — let Next.js handle them
-  if (event.request.mode === 'navigate') {
-    return;
-  }
-
-  // Network-first for API calls
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  // Cache-first for static game assets only
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
-  );
+// Self-destructing service worker — unregisters itself immediately
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => {
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => client.navigate(client.url));
+  });
+  self.registration.unregister();
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 });

@@ -13,7 +13,7 @@ const spaceMono = Space_Mono({ weight: ["400", "700"], subsets: ["latin"], varia
 export const metadata = {
   title: "Basket Random",
   description: "Real-time multiplayer basketball",
-  manifest: '/manifest.json',
+  // manifest removed — SW was causing redirect loops in dev
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent' as const,
