@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button"
 
 const COLORS = ['#ffffff', '#ef4444', '#3b82f6', '#eab308', '#22c55e', '#f97316'];
 const COURT_COLOR = '#FF6B35';
-const CANVAS_WIDTH = 900;
-const CANVAS_HEIGHT = 500;
+const CANVAS_WIDTH = 960;
+const CANVAS_HEIGHT = 540;
 
 export default function StrategyPage() {
   const courtCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,44 +26,190 @@ export default function StrategyPage() {
     const w = canvas.width;
     const h = canvas.height;
 
-    // Background
-    ctx.fillStyle = '#1a1a2e';
+    // === Basket Random side-view game screen ===
+
+    // Sky / background gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+    skyGrad.addColorStop(0, '#1a1f3a');
+    skyGrad.addColorStop(0.6, '#2a2040');
+    skyGrad.addColorStop(1, '#1a1a2e');
+    ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, w, h);
 
+    // Ground
+    const groundY = h * 0.78;
+    ctx.fillStyle = '#2d1f0e';
+    ctx.fillRect(0, groundY, w, h - groundY);
+    // Ground line
+    ctx.strokeStyle = '#4a3520';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(w, groundY);
+    ctx.stroke();
+    // Ground texture lines
+    ctx.strokeStyle = '#3a2a18';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < w; i += 40) {
+      ctx.beginPath();
+      ctx.moveTo(i, groundY);
+      ctx.lineTo(i, h);
+      ctx.stroke();
+    }
+
+    // Center line (dashed)
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 0);
+    ctx.lineTo(w / 2, groundY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Left basket/hoop
+    const hoopY = groundY * 0.45;
+    const hoopSize = 30;
+    const backboardH = 60;
+    // Backboard
+    ctx.fillStyle = '#cccccc';
+    ctx.fillRect(30, hoopY - backboardH / 2, 6, backboardH);
+    // Hoop ring
     ctx.strokeStyle = COURT_COLOR;
     ctx.lineWidth = 3;
-    const margin = 40;
-
-    // Court outline
-    ctx.strokeRect(margin, margin, w - margin * 2, h - margin * 2);
-
-    // Center line
     ctx.beginPath();
-    ctx.moveTo(w / 2, margin);
-    ctx.lineTo(w / 2, h - margin);
+    ctx.moveTo(36, hoopY);
+    ctx.lineTo(36 + hoopSize, hoopY);
     ctx.stroke();
+    // Net (simple lines)
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= hoopSize; i += 6) {
+      ctx.beginPath();
+      ctx.moveTo(36 + i, hoopY);
+      ctx.lineTo(36 + hoopSize / 2, hoopY + 25);
+      ctx.stroke();
+    }
+    // Pole
+    ctx.fillStyle = '#666';
+    ctx.fillRect(28, hoopY, 4, groundY - hoopY);
 
-    // Center circle
+    // Right basket/hoop (mirrored)
+    ctx.fillStyle = '#cccccc';
+    ctx.fillRect(w - 36, hoopY - backboardH / 2, 6, backboardH);
+    ctx.strokeStyle = COURT_COLOR;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(w / 2, h / 2, 60, 0, Math.PI * 2);
+    ctx.moveTo(w - 36, hoopY);
+    ctx.lineTo(w - 36 - hoopSize, hoopY);
     ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= hoopSize; i += 6) {
+      ctx.beginPath();
+      ctx.moveTo(w - 36 - i, hoopY);
+      ctx.lineTo(w - 36 - hoopSize / 2, hoopY + 25);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#666';
+    ctx.fillRect(w - 32, hoopY, 4, groundY - hoopY);
 
-    // Left basket area
-    ctx.strokeRect(margin, h / 2 - 80, 80, 160);
+    // Player 1 (left side) — stick figure
+    const p1x = w * 0.25;
+    const py = groundY;
+    ctx.strokeStyle = '#4a9eff';
+    ctx.lineWidth = 3;
+    // Body
     ctx.beginPath();
-    ctx.arc(margin + 80, h / 2, 40, -Math.PI / 2, Math.PI / 2);
+    ctx.moveTo(p1x, py - 50);
+    ctx.lineTo(p1x, py - 20);
     ctx.stroke();
-
-    // Right basket area
-    ctx.strokeRect(w - margin - 80, h / 2 - 80, 80, 160);
+    // Legs
     ctx.beginPath();
-    ctx.arc(w - margin - 80, h / 2, 40, Math.PI / 2, -Math.PI / 2);
+    ctx.moveTo(p1x, py - 20);
+    ctx.lineTo(p1x - 10, py);
+    ctx.moveTo(p1x, py - 20);
+    ctx.lineTo(p1x + 10, py);
     ctx.stroke();
+    // Arms
+    ctx.beginPath();
+    ctx.moveTo(p1x, py - 40);
+    ctx.lineTo(p1x + 15, py - 30);
+    ctx.stroke();
+    // Head
+    ctx.fillStyle = '#4a9eff';
+    ctx.beginPath();
+    ctx.arc(p1x, py - 58, 8, 0, Math.PI * 2);
+    ctx.fill();
+    // Label
+    ctx.fillStyle = '#4a9eff';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('P1', p1x, py - 72);
 
-    // Hoop indicators
+    // Player 2 (right side)
+    const p2x = w * 0.75;
+    ctx.strokeStyle = '#ff5555';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(p2x, py - 50);
+    ctx.lineTo(p2x, py - 20);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p2x, py - 20);
+    ctx.lineTo(p2x - 10, py);
+    ctx.moveTo(p2x, py - 20);
+    ctx.lineTo(p2x + 10, py);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p2x, py - 40);
+    ctx.lineTo(p2x - 15, py - 30);
+    ctx.stroke();
+    ctx.fillStyle = '#ff5555';
+    ctx.beginPath();
+    ctx.arc(p2x, py - 58, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff5555';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('P2', p2x, py - 72);
+
+    // Ball (center)
     ctx.fillStyle = COURT_COLOR;
-    ctx.fillRect(margin, h / 2 - 5, 10, 10);
-    ctx.fillRect(w - margin - 10, h / 2 - 5, 10, 10);
+    ctx.beginPath();
+    ctx.arc(w / 2, groundY - 30, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#cc5020';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(w / 2, groundY - 30, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    // Ball lines
+    ctx.beginPath();
+    ctx.moveTo(w / 2 - 10, groundY - 30);
+    ctx.lineTo(w / 2 + 10, groundY - 30);
+    ctx.stroke();
+
+    // Score area at top
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(w / 2 - 60, 10, 120, 30);
+    ctx.fillStyle = '#4a9eff';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('0', w / 2 - 8, 31);
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText('-', w / 2, 31);
+    ctx.fillStyle = '#ff5555';
+    ctx.textAlign = 'left';
+    ctx.fillText('0', w / 2 + 8, 31);
+
+    // Zone labels (subtle)
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('LEFT SIDE', w * 0.25, 20);
+    ctx.fillText('RIGHT SIDE', w * 0.75, 20);
   }, []);
 
   function saveState() {
