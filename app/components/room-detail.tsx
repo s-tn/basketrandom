@@ -33,6 +33,9 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
   const [ endpoint, setEndpoint ] = useState("");
   const [socket, setSocket] = useState<ReconnectingWebSocket | null>(null);
   const [selectedSkin, setSelectedSkin] = useState('default');
+  // Set after mount so server and client render the same invite link (avoids hydration mismatch)
+  const [origin, setOrigin] = useState('');
+  useEffect(() => { setOrigin(window.location.origin) }, []);
   const [playerSkins, setPlayerSkins] = useState<Record<string, string>>({});
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startGameListenerRef = useRef(false);
@@ -385,7 +388,7 @@ export function RoomDetail({ roomId, initialRoom }: RoomDetailProps) {
                 <p>Share this invite link with a friend to play together:</p>
                 <div className="flex items-center gap-2 mt-2">
                   <code className="flex-1 px-2 py-1 font-mono rounded bg-background truncate text-xs">
-                    {typeof window !== "undefined" ? `${window.location.origin}/rooms/join/${room.id}` : `/rooms/join/${room.id}`}
+                    {`${origin}/rooms/join/${room.id}`}
                   </code>
                   <Button
                     variant="ghost"

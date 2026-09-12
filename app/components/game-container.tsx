@@ -150,13 +150,14 @@ export function GameContainer({ roomId, players, ws, lobbySocket, playerSkins }:
           setDrawActive(event.data.active);
         }
         if (event.data.type === 'score') {
-          setScore(event.data.data);
+          if (Array.isArray(event.data.data)) setScore(event.data.data);
         }
         if (event.data.type === 'ping') {
           if (pingStatus !== "connected") {
             setPingStatus("connected");
           }
-          setScore(event.data.scores);
+          // ping messages from the client bundle don't always carry scores
+          if (Array.isArray(event.data.scores)) setScore(event.data.scores);
           return setPing(event.data.data);
         }
 

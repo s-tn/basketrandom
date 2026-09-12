@@ -87,79 +87,68 @@ export default function RoomsPage() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [autoRefresh, modeFilter, statusFilter, sort]);
 
-  const filterBtn = (active: boolean) =>
-    `px-3 py-1.5 text-sm rounded-md border transition-colors ${active
-      ? 'bg-primary text-primary-foreground border-primary'
-      : 'bg-background border-muted text-muted-foreground hover:border-primary hover:text-foreground'}`;
+  const segBtn = (active: boolean) =>
+    `px-3 py-1 text-xs font-medium transition-colors ${active
+      ? 'bg-secondary text-foreground'
+      : 'text-muted-foreground hover:text-foreground'}`;
+
+  const filterGroup = (label: string, children: React.ReactNode) => (
+    <div className="flex items-center gap-2">
+      <span className="font-mono-game text-[10px] uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+      <div className="flex rounded-md border divide-x overflow-hidden">{children}</div>
+    </div>
+  );
 
   return (
-    <div className="container py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md">
-            <Basketball className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-3xl font-bold">Available Rooms</h1>
+    <div className="container py-10">
+      <div className="flex flex-wrap items-end justify-between gap-4 pb-5 mb-6 border-b">
+        <div>
+          <p className="font-mono-game text-[11px] uppercase tracking-[0.2em] text-primary mb-1.5">Multiplayer lobby</p>
+          <h1 className="text-2xl font-bold tracking-tight">Rooms</h1>
         </div>
-        <div className="space-x-2">
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/rooms/create">Create Room</Link>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/rooms/create">Create room</Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/rooms/join">Join by Code</Link>
+            <Link href="/rooms/join">Join by code</Link>
           </Button>
         </div>
       </div>
 
-      <div className="court-line w-full mb-6"></div>
-
       {/* Filter toolbar */}
-      <div className="flex flex-wrap gap-4 mb-6 items-center">
-        {/* Mode filter */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-muted-foreground mr-1">Mode:</span>
-          {(['all', '1v1', '2v2'] as const).map(m => (
-            <button key={m} className={filterBtn(modeFilter === m)} onClick={() => setModeFilter(m)}>
-              {m === 'all' ? 'All' : m.toUpperCase()}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-3 mb-6 items-center">
+        {filterGroup('Mode', (['all', '1v1', '2v2'] as const).map(m => (
+          <button key={m} className={segBtn(modeFilter === m)} onClick={() => setModeFilter(m)}>
+            {m === 'all' ? 'All' : m.toUpperCase()}
+          </button>
+        )))}
 
-        {/* Status filter */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-muted-foreground mr-1">Status:</span>
-          {(['all', 'waiting', 'playing'] as const).map(s => (
-            <button key={s} className={filterBtn(statusFilter === s)} onClick={() => setStatusFilter(s)}>
-              {s === 'all' ? 'All' : s === 'waiting' ? 'Waiting' : 'In Progress'}
-            </button>
-          ))}
-        </div>
+        {filterGroup('Status', (['all', 'waiting', 'playing'] as const).map(s => (
+          <button key={s} className={segBtn(statusFilter === s)} onClick={() => setStatusFilter(s)}>
+            {s === 'all' ? 'All' : s === 'waiting' ? 'Waiting' : 'In progress'}
+          </button>
+        )))}
 
-        {/* Sort */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-muted-foreground mr-1">Sort:</span>
-          {(['newest', 'oldest'] as const).map(s => (
-            <button key={s} className={filterBtn(sort === s)} onClick={() => setSort(s)}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
+        {filterGroup('Sort', (['newest', 'oldest'] as const).map(s => (
+          <button key={s} className={segBtn(sort === s)} onClick={() => setSort(s)}>
+            {s.charAt(0).toUpperCase() + s.slice(1)}
+          </button>
+        )))}
 
         {/* Auto-refresh toggle */}
         <button
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ml-auto ${autoRefresh
-            ? 'bg-green-600 text-white border-green-600'
-            : 'bg-background border-muted text-muted-foreground hover:border-green-600'}`}
+          className="flex items-center gap-2 ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors"
           onClick={() => setAutoRefresh(v => !v)}
         >
-          <span className={`inline-block w-2 h-2 rounded-full ${autoRefresh ? 'bg-white animate-pulse' : 'bg-muted-foreground'}`} />
-          Auto-refresh {autoRefresh ? 'on' : 'off'}
+          <span className={`inline-block w-1.5 h-1.5 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-border'}`} />
+          Live updates {autoRefresh ? 'on' : 'off'}
         </button>
       </div>
 
       {/* Room count */}
-      <p className="text-sm text-muted-foreground mb-4">
-        {loading ? 'Loading rooms...' : `${rooms.length} room${rooms.length !== 1 ? 's' : ''} found`}
+      <p className="font-mono-game text-[11px] uppercase tracking-[0.15em] text-muted-foreground mb-4">
+        {loading ? 'Loading…' : `${rooms.length} room${rooms.length !== 1 ? 's' : ''}`}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -169,82 +158,73 @@ export default function RoomsPage() {
           const status = getRoomStatus(room);
           const custom = hasCustomRules(room);
 
-          const statusLabel = status === 'waiting' ? 'Waiting' : status === 'playing' ? 'In Progress' : 'Finished';
-          const statusColor = status === 'waiting'
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-            : status === 'playing'
-            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-            : 'bg-muted text-muted-foreground';
+          const statusLabel = status === 'waiting' ? 'Waiting' : status === 'playing' ? 'In progress' : 'Finished';
+          const statusDot = status === 'waiting' ? 'bg-green-500' : status === 'playing' ? 'bg-amber-500' : 'bg-border';
 
           return (
-            <div
-              key={id}
-              className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow dark:border-muted bg-background"
-            >
-              <div className="bg-primary text-primary-foreground p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-xl font-semibold leading-tight">{name} <span className="opacity-80 text-sm font-light">#{id}</span></h2>
-                  <span className="shrink-0 text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{mode.toUpperCase()}</span>
-                </div>
-                <p className="text-sm opacity-80 mt-1">Host: {host}</p>
-              </div>
-              <div className="p-4 bg-accent/30 dark:bg-accent/10 space-y-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>{statusLabel}</span>
-                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full dark:bg-muted/30">
-                    {players.length}/{maxPlayers} Players
+            <div key={id} className="rounded-lg border bg-card card-lift flex flex-col">
+              <div className="p-4 flex-1 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold leading-tight truncate">{name}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">hosted by {host}</p>
+                  </div>
+                  <span className="shrink-0 font-mono-game text-[10px] uppercase tracking-wider text-muted-foreground border rounded px-1.5 py-0.5">
+                    {mode}
                   </span>
-                  {custom && (
-                    <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full">
-                      Custom rules
-                    </span>
-                  )}
-                  {room.tournament && (
-                    <span className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full">
-                      Tournament
-                    </span>
-                  )}
                 </div>
-                <div className="text-xs text-muted-foreground space-y-0.5">
-                  {room.scoreMax !== DEFAULTS.scoreMax && <p>Score limit: {room.scoreMax}</p>}
-                  {room.roundGoal !== DEFAULTS.roundGoal && <p>Rounds to win: {room.roundGoal}</p>}
-                  {room.gravity !== DEFAULTS.gravity && <p>Gravity: {room.gravity}</p>}
-                  {room.timeLimit !== DEFAULTS.timeLimit && <p>Time limit: {room.timeLimit}s</p>}
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusDot} ${status === 'waiting' ? 'animate-pulse' : ''}`} />
+                    {statusLabel}
+                  </span>
+                  {custom && <span className="text-muted-foreground">Custom rules</span>}
+                  {room.tournament && <span className="text-muted-foreground">Tournament</span>}
                 </div>
-                <div className="flex justify-end gap-2">
-                  {status === 'waiting' && (
-                    <Button size="sm" disabled={players.length >= maxPlayers} asChild={players.length < maxPlayers}>
-                      {players.length >= maxPlayers ? <span>Full</span> : <Link href={`/rooms/join/${id}`}>Join</Link>}
-                    </Button>
-                  )}
-                  {status === 'playing' && (
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href={`/rooms/${id}/watch`}>Watch</Link>
-                    </Button>
-                  )}
-                  {status === 'finished' && (
-                    <span className="text-xs text-muted-foreground self-center">Game over</span>
-                  )}
-                </div>
+                {custom && (
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {room.scoreMax !== DEFAULTS.scoreMax && <p>Score limit {room.scoreMax}</p>}
+                    {room.roundGoal !== DEFAULTS.roundGoal && <p>First to {room.roundGoal} rounds</p>}
+                    {room.gravity !== DEFAULTS.gravity && <p>Gravity {room.gravity}</p>}
+                    {room.timeLimit !== DEFAULTS.timeLimit && <p>{room.timeLimit}s time limit</p>}
+                  </div>
+                )}
+              </div>
+              <div className="border-t px-4 py-2.5 flex items-center justify-between">
+                <span className="font-mono-game text-xs text-muted-foreground">
+                  {players.length}<span className="opacity-50">/{maxPlayers}</span> players
+                </span>
+                {status === 'waiting' && (
+                  <Button size="sm" variant="outline" disabled={players.length >= maxPlayers} asChild={players.length < maxPlayers}>
+                    {players.length >= maxPlayers ? <span>Full</span> : <Link href={`/rooms/join/${id}`}>Join</Link>}
+                  </Button>
+                )}
+                {status === 'playing' && (
+                  <Button size="sm" variant="ghost" asChild>
+                    <Link href={`/rooms/${id}/watch`}>Watch</Link>
+                  </Button>
+                )}
+                {status === 'finished' && (
+                  <span className="text-xs text-muted-foreground">Game over</span>
+                )}
               </div>
             </div>
           );
         })}
 
         {!loading && rooms.length === 0 && (
-          <div className="col-span-full border border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-muted-foreground dark:border-muted/50">
-            <Basketball className="w-12 h-12 mb-2 text-muted-foreground" />
-            <p className="mb-4">No rooms match your filters.</p>
-            <Button asChild className="bg-primary hover:bg-primary/90">
-              <Link href="/rooms/create">Create a Room</Link>
+          <div className="col-span-full border border-dashed rounded-lg py-16 flex flex-col items-center justify-center text-center">
+            <Basketball className="w-8 h-8 mb-3 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground mb-4">No rooms right now.</p>
+            <Button variant="outline" asChild>
+              <Link href="/rooms/create">Create the first one</Link>
             </Button>
           </div>
         )}
 
         {loading && (
-          <div className="col-span-full border border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-muted-foreground dark:border-muted/50">
-            <Basketball className="w-12 h-12 mb-2 text-muted-foreground" />
-            <p>Loading rooms...</p>
+          <div className="col-span-full border border-dashed rounded-lg py-16 flex items-center justify-center">
+            <p className="font-mono-game text-xs uppercase tracking-[0.15em] text-muted-foreground">Loading…</p>
           </div>
         )}
       </div>
