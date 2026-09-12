@@ -5,8 +5,14 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
 
+  // Behind a proxy request.url may resolve to localhost; use the public
+  // origin from DISCORD_REDIRECT_URI for browser-facing redirects.
+  const base = process.env.DISCORD_REDIRECT_URI
+    ? new URL(process.env.DISCORD_REDIRECT_URI).origin
+    : request.url;
+
   if (!code) {
-    return NextResponse.redirect(new URL('/?error=no_code', request.url));
+    return NextResponse.redirect(new URL('/?error=no_code', base));
   }
 
   // Exchange code for token
@@ -23,7 +29,7 @@ export async function GET(request: Request) {
   });
 
   if (!tokenRes.ok) {
-    return NextResponse.redirect(new URL('/?error=token_failed', request.url));
+    return NextResponse.redirect(new URL('/?error=token_failed', base));
   }
 
   const tokenData = await tokenRes.json();
@@ -34,7 +40,7 @@ export async function GET(request: Request) {
   });
 
   if (!userRes.ok) {
-    return NextResponse.redirect(new URL('/?error=user_failed', request.url));
+    return NextResponse.redirect(new URL('/?error=user_failed', base));
   }
 
   const discordUser = await userRes.json();
@@ -60,7 +66,7 @@ export async function GET(request: Request) {
 
   // Set a simple session cookie (player ID + name)
   const sessionData = JSON.stringify({ id: player.id, name: player.name, avatar: player.discordAvatar });
-  const response = NextResponse.redirect(new URL('/profile', request.url));
+  const response = NextResponse.redirect(new URL('/profile', base));
   response.cookies.set('session', Buffer.from(sessionData).toString('base64'), {
     httpOnly: false, // Need JS access for client components
     secure: process.env.NODE_ENV === 'production',
