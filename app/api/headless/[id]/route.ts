@@ -212,19 +212,10 @@ async function createLobby(id: string) {
         serverClipper = createClipper(stream, id);
     }
 
-    await page.evaluate(() => {
-        return new Promise<void>((resolve) => {
-            const originalLog = console.log;
-            console.log = (...args) => {
-                if (args[0] === 'start game called') {
-                    setTimeout(() => {
-                        resolve();
-                    }, 1000);
-                }
-                originalLog(...args);
-            };
-        });
-    });
+    // The flag is set by the console.log wrapper installed via evaluateOnNewDocument in run(),
+    // so it can't be missed even when the game logs 'start game called' before we get here
+    await page.waitForFunction(() => (window as any).__startGameCalled === true, { timeout: 120000 });
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
     log('Game loaded in lobby:', id);
 
     clients().forEach((cli) => {
@@ -1040,12 +1031,23 @@ const run = async () => {
         const isLinux = platform === 'linux';
         const isWindows = platform === 'win32';
 
-        const exec = process.env.CHROMIUM || (isMac ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' :
-            isLinux ? '/usr/bin/chromium' :
-            isWindows ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' :
-            'google-chrome-stable');
+        let exec = process.env.CHROMIUM;
+        if (!exec) {
+            // Fall back to puppeteer's bundled Chrome for Testing if no system browser is configured
+            try {
+                const puppeteer = await import('puppeteer');
+                exec = puppeteer.executablePath();
+            } catch {}
+        }
+        if (!exec) {
+            exec = isMac ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' :
+                isLinux ? '/usr/bin/chromium' :
+                isWindows ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' :
+                'google-chrome-stable';
+        }
 
         const { launch } = await puppeteerStream();
+        // Clear the cache on launch failure so one bad launch doesn't poison every future game
         browserPromise = launch({
                 headless: process.env.HEADLESS !== 'false' ? 'new' : false,
                 executablePath: exec,
@@ -1053,9 +1055,11 @@ const run = async () => {
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
-                    '--disable-gpu',
-                    '--disable-software-rasterizer',
-                    '--disable-extensions',
+                    // The C3 engine requires WebGL: --disable-gpu breaks it on modern Chrome
+                    // (no software fallback anymore); allow SwiftShader for GPU-less hosts instead
+                    '--enable-unsafe-swiftshader',
+                    // NOTE: --disable-extensions must NOT be passed — puppeteer-stream loads its
+                    // capture extension at launch and fails with ERR_BLOCKED_BY_CLIENT if disabled
                     '--disable-background-networking',
                     '--disable-default-apps',
                     '--disable-sync',
@@ -1072,6 +1076,10 @@ const run = async () => {
                     height: 360,
                 },
             });
+        browserPromise.catch(() => {
+            browserPromise = null;
+            browserEventsBound = false;
+        });
     }
     const browser = await browserPromise;
 
@@ -1092,6 +1100,14 @@ const run = async () => {
     }
 
     const page = await browser.newPage();
+    // Record the game's start signal before any page script runs — createLobby polls this flag
+    await page.evaluateOnNewDocument(() => {
+        const originalLog = console.log;
+        console.log = (...args: any[]) => {
+            if (args[0] === 'start game called') (window as any).__startGameCalled = true;
+            originalLog(...args);
+        };
+    });
     await page.goto('http://localhost:9001/');
 
     // Only bind signal handlers once
