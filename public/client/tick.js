@@ -9,9 +9,13 @@ export function applyState(window, state) {
     ui[3]._sdkInst._SetText(String(state.score0));
   } catch {}
 
+  // flags bit0 = 2v2. In 1v1 body2/body4 (and arm2/arm4) are parked offscreen for the
+  // unused 2v2 characters — snapping them onto the active players doubles the sprites.
+  const is2v2 = ((state.flags ?? 0) & 1) === 1;
+
   // Player 0 bodies
   const p0a = window.players[0]; // body
-  const p0b = window.players[1]; // body2
+  const p0b = is2v2 ? window.players[1] : null; // body2 (2v2 only)
   if (p0a) {
     p0a.x = state.p0x;
     p0a.y = state.p0y;
@@ -26,7 +30,7 @@ export function applyState(window, state) {
 
   // Player 1 bodies
   const p1a = window.players[2]; // body3
-  const p1b = window.players[3]; // body4
+  const p1b = is2v2 ? window.players[3] : null; // body4 (2v2 only)
   if (p1a) {
     p1a.x = state.p1x;
     p1a.y = state.p1y;
@@ -42,9 +46,9 @@ export function applyState(window, state) {
   // Arms
   const arms = window.arms;
   if (arms[0]) arms[0].angle = state.p0armAngle;
-  if (arms[1]) arms[1].angle = state.p0armAngle;
+  if (is2v2 && arms[1]) arms[1].angle = state.p0armAngle;
   if (arms[2]) arms[2].angle = state.p1armAngle;
-  if (arms[3]) arms[3].angle = state.p1armAngle;
+  if (is2v2 && arms[3]) arms[3].angle = state.p1armAngle;
 
   // Ball
   const ball = window.ball;

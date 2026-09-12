@@ -64,11 +64,15 @@ setInterval(() => {
     request: import("http").IncomingMessage,
     server: import("ws").WebSocketServer
   ) {
-    const lobbyId: string = request.url!.split('/')[3].split('?')[0];
-    const streamType: string = request.url!.split('?')[1];
+    const u = new URL(request.url!, 'http://localhost');
+    const lobbyId: string = u.pathname.split('/')[3];
+    // The socket kind is a bare query key (?stream / ?events / ?spectator); cid is the
+    // client-chosen id shared by one player's stream+events pair so both map to the same player
+    const streamType: string = ['stream', 'events', 'spectator'].find(t => u.searchParams.has(t)) ?? (u.search.slice(1) || 'stream');
     (client as any).lobbyId = lobbyId;
     (client as any).type = streamType;
     (client as any).id = randomUUID();
+    (client as any).cid = u.searchParams.get('cid') || null;
     (client as any).ready = false;
     sockets.push(client);
 
@@ -236,17 +240,21 @@ async function createLobby(id: string) {
         cli.send(JSON.stringify({ type: 'update', message: 'Server starting...' }));
     });
 
+    // Sides/roles must be keyed per player, not per socket: inputs arrive on a client's
+    // 'events' socket while these lists hold its 'stream' socket, so use the shared cid
+    const playerKey = (c: any) => c.cid || c.id;
+
     // 2v2 role assignment
     const roles: Record<string, string> = {};
     if (is2v2) {
         const streamClients = clients();
-        roles[streamClients[0]?.id] = 'team1-jumper';
-        roles[streamClients[1]?.id] = 'team1-arm';
-        roles[streamClients[2]?.id] = 'team2-jumper';
-        roles[streamClients[3]?.id] = 'team2-arm';
+        roles[playerKey(streamClients[0])] = 'team1-jumper';
+        roles[playerKey(streamClients[1])] = 'team1-arm';
+        roles[playerKey(streamClients[2])] = 'team2-jumper';
+        roles[playerKey(streamClients[3])] = 'team2-arm';
 
         streamClients.forEach(client => {
-            client.send(JSON.stringify({ type: 'role-assigned', role: roles[client.id] }));
+            client.send(JSON.stringify({ type: 'role-assigned', role: roles[playerKey(client)] }));
         });
     }
 
@@ -512,8 +520,8 @@ async function createLobby(id: string) {
         const loserIdx = flipWinnerIdx === 0 ? 1 : 0;
 
         clientSideMap = {};
-        clientSideMap[flipClients[flipWinnerIdx]?.id] = wSide;
-        clientSideMap[flipClients[loserIdx]?.id] = loserSide;
+        clientSideMap[playerKey(flipClients[flipWinnerIdx])] = wSide;
+        clientSideMap[playerKey(flipClients[loserIdx])] = loserSide;
 
         // Notify clients of their sides
         flipClients.forEach((client, i) => {
@@ -550,7 +558,7 @@ async function createLobby(id: string) {
                                 let key: string;
 
                                 if (is2v2) {
-                                    const role = roles[client.id];
+                                    const role = roles[playerKey(client)];
                                     switch (role) {
                                         case 'team1-jumper': key = 'ArrowUp'; break;
                                         case 'team1-arm': key = 'ArrowLeft'; break;
@@ -560,7 +568,7 @@ async function createLobby(id: string) {
                                     }
                                 } else {
                                     // 1v1: use side map (existing logic)
-                                    const side = clientSideMap[client.id];
+                                    const side = clientSideMap[playerKey(client)];
                                     key = side === 'left' ? 'ArrowUp' : 'w';
                                 }
 
@@ -579,7 +587,7 @@ async function createLobby(id: string) {
                             if (data.type === 'key') {
                                 let key: string;
                                 if (is2v2) {
-                                    const role = roles[client.id];
+                                    const role = roles[playerKey(client)];
                                     switch (role) {
                                         case 'team1-jumper': key = 'ArrowUp'; break;
                                         case 'team1-arm': key = 'ArrowLeft'; break;
@@ -588,7 +596,7 @@ async function createLobby(id: string) {
                                         default: return;
                                     }
                                 } else {
-                                    const side = clientSideMap[client.id];
+                                    const side = clientSideMap[playerKey(client)];
                                     key = side === 'left' ? 'ArrowUp' : 'w';
                                 }
                                 if (data.event === 'keydown') {
@@ -1008,7 +1016,7 @@ async function createLobby(id: string) {
       }
     });
 
-    await browser.page.evaluate(() => {
+    await browser.page.evaluate((modeFlags: number) => {
         const win = window as any;
         win.__stateTicks = 0;
         setInterval(() => {
@@ -1032,11 +1040,11 @@ async function createLobby(id: string) {
               ballVel[0], ballVel[1],
               ball.instVars.hold ? ball.instVars.who : 0,
               win.score.p1, win.score.p2,
-              0, // flags
+              modeFlags, // bit0 = 2v2 — the client uses this to leave the parked 2v2-only bodies alone in 1v1
             ]);
           } catch (e) { win.__stateErr = String((e as any)?.stack || e); }
         }, 1000 / 60); // 60 Hz
-    });
+    }, is2v2 ? 1 : 0);
     log(`State loop installed: ${id}`);
 
     // Surface silent state-loop failures — without this a broken loop means

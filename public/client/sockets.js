@@ -2,9 +2,12 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 
 export function getSockets(url, spectator = false) {
     const wsBase = `${location.protocol.replace('http', 'ws')}//${location.host}${url}`;
+    // Shared per-player id: the server uses it to recognize that the stream and
+    // events sockets belong to the same player (sides/roles are assigned per player)
+    const cid = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 
     if (spectator) {
-        const inSock = new ReconnectingWebSocket(`${wsBase}?spectator`);
+        const inSock = new ReconnectingWebSocket(`${wsBase}?spectator&cid=${cid}`);
         const sockets = {
             in: inSock,
             out: null,
@@ -16,8 +19,8 @@ export function getSockets(url, spectator = false) {
     }
 
     const sockets = {
-        in: new ReconnectingWebSocket(`${wsBase}?stream`),
-        out: new ReconnectingWebSocket(`${wsBase}?events`)
+        in: new ReconnectingWebSocket(`${wsBase}?stream&cid=${cid}`),
+        out: new ReconnectingWebSocket(`${wsBase}?events&cid=${cid}`)
     };
 
     sockets.connected = Promise.allSettled([
