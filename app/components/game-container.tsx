@@ -396,7 +396,7 @@ export function GameContainer({ roomId, players, ws, lobbySocket, playerSkins }:
               <div className="absolute inset-0 bg-black opacity-85"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 {
-                  (message !== "Waiting for start..." && message !== "New round starting...") && <div className="w-12 h-12 border-4 border-t-primary rounded-full animate-spin"></div>
+                  (message !== "Waiting for start..." && message !== "New round starting..." && pingStatus !== "disconnected") && <div className="w-12 h-12 border-4 border-t-primary rounded-full animate-spin"></div>
                 }
                 <span className="absolute top-16 text-lg text-white">{message}</span>
                 {

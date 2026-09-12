@@ -47,7 +47,9 @@ export function stateToFields(s: GameState): number[] {
 function writeHeader(buf: Buffer, type: number, seq: number): void {
   buf.writeUInt8(type, 0);
   buf.writeUInt32BE(seq, 1);
-  buf.writeUInt32BE(Date.now() & 0xffffffff, 5);
+  // >>> keeps the low 32 bits unsigned — & 0xffffffff coerces to SIGNED int32,
+  // which goes negative every ~25 days and makes writeUInt32BE throw on every packet
+  buf.writeUInt32BE(Date.now() >>> 0, 5);
 }
 
 export function encodeSnapshot(seq: number, state: GameState): Buffer {

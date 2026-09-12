@@ -99,7 +99,14 @@ setInterval(() => {
     if (streamType === 'stream') {
         if (!lobbies[lobbyId]) {
             lobbies[lobbyId] = [];
-            createLobby(lobbyId);
+            // Surface any startup failure to the waiting players instead of hanging them
+            createLobby(lobbyId).catch((err) => {
+                console.error(`Lobby ${lobbyId} failed to start:`, err);
+                [...sockets].filter(s => (s as any).lobbyId === lobbyId).forEach(s => {
+                    try { s.send(JSON.stringify({ type: 'error', message: 'Game server failed to start. Leave the room and try again.' })) } catch {}
+                });
+                delete lobbies[lobbyId];
+            });
         }
         lobbies[lobbyId].push(client);
     }
@@ -112,6 +119,10 @@ async function createLobby(id: string) {
 
     if (!await roomInfo()) {
         log('Room not found:', id);
+        [...sockets].filter(s => (s as any).lobbyId === id).forEach(s => {
+            try { s.send(JSON.stringify({ type: 'error', message: 'Room no longer exists.' })) } catch {}
+        });
+        delete lobbies[id];
         return;
     }
 
@@ -138,6 +149,9 @@ async function createLobby(id: string) {
         await playersReady;
     } catch {
         console.warn(`Lobby ${id} timed out waiting for players`);
+        [...sockets].filter(s => (s as any).lobbyId === id).forEach(s => {
+            try { s.send(JSON.stringify({ type: 'error', message: 'Timed out waiting for players. Leave the room and try again.' })) } catch {}
+        });
         delete lobbies[id];
         return;
     }
@@ -654,6 +668,7 @@ async function createLobby(id: string) {
     });
 
     await resume();
+    log(`Game resumed: ${id}`);
 
     // Apply time limit per round if set
     let startTimeLimitTimer: () => void = () => {};
@@ -923,7 +938,12 @@ async function createLobby(id: string) {
 
     let scoreLock = false;
 
+    log(`Installing state loop: ${id}`);
+    let sendCount = 0;
+    let sendErr: any = null;
     await page.exposeFunction('__sendState', (flatState: number[]) => {
+      try {
+        sendCount++;
         if (paused) return;
 
         const state: GameState = {
@@ -981,11 +1001,18 @@ async function createLobby(id: string) {
                 gamer.send(packet);
             }
         }
+      } catch (e) {
+        // exposeFunction callbacks reject into the page where nothing awaits them —
+        // capture here or state-send failures are completely invisible
+        if (!sendErr) { sendErr = e; console.error(`State send failing in lobby ${id}:`, e); }
+      }
     });
 
     await browser.page.evaluate(() => {
         const win = window as any;
+        win.__stateTicks = 0;
         setInterval(() => {
+          win.__stateTicks++;
           try {
             const p0 = win.players[0];
             const p1 = win.players[2]; // body3 = player 1
@@ -1007,9 +1034,20 @@ async function createLobby(id: string) {
               win.score.p1, win.score.p2,
               0, // flags
             ]);
-          } catch {}
+          } catch (e) { win.__stateErr = String((e as any)?.stack || e); }
         }, 1000 / 60); // 60 Hz
     });
+    log(`State loop installed: ${id}`);
+
+    // Surface silent state-loop failures — without this a broken loop means
+    // "game runs but nothing syncs" with zero server-side evidence
+    setTimeout(async () => {
+        try {
+            const dbg = await page.evaluate(() => ({ ticks: (window as any).__stateTicks, err: (window as any).__stateErr || null }));
+            log(`State loop debug ${id}: ticks=${dbg.ticks} sends=${sendCount} gamers=${gamers.length} paused=${paused} err=${dbg.err || 'none'}`);
+            if (dbg.err) console.error(`State loop failing in lobby ${id}:`, dbg.err);
+        } catch (e) { log(`State loop debug failed ${id}:`, e); }
+    }, 5000);
 }
 
 
@@ -1031,20 +1069,21 @@ const run = async () => {
         const isLinux = platform === 'linux';
         const isWindows = platform === 'win32';
 
-        let exec = process.env.CHROMIUM;
-        if (!exec) {
-            // Fall back to puppeteer's bundled Chrome for Testing if no system browser is configured
-            try {
-                const puppeteer = await import('puppeteer');
-                exec = puppeteer.executablePath();
-            } catch {}
-        }
-        if (!exec) {
-            exec = isMac ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' :
-                isLinux ? '/usr/bin/chromium' :
-                isWindows ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' :
-                'google-chrome-stable';
-        }
+        // First existing browser wins: configured CHROMIUM, puppeteer's cached Chrome
+        // (existence-checked — a broken cache reports a path with no binary), then system paths
+        const candidates: string[] = [];
+        if (process.env.CHROMIUM) candidates.push(process.env.CHROMIUM);
+        try {
+            const puppeteer = await import('puppeteer');
+            candidates.push(puppeteer.executablePath());
+        } catch {}
+        candidates.push(isMac ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' :
+            isLinux ? '/usr/bin/chromium' :
+            isWindows ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' :
+            'google-chrome-stable');
+        const exec = candidates.find(p => { try { return fs.existsSync(p); } catch { return false; } })
+            ?? candidates[candidates.length - 1];
+        log('Launching game browser:', exec);
 
         const { launch } = await puppeteerStream();
         // Clear the cache on launch failure so one bad launch doesn't poison every future game

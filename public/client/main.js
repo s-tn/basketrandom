@@ -271,6 +271,9 @@ async function start() {
                 if (json.type === 'draw-remote' && drawer) {
                     drawer.applyRemote(json.segments);
                 }
+                if (json.type === 'error') {
+                    window.postMessage({ type: 'error', data: json.message }, '*');
+                }
             } catch {}
             return;
         }
