@@ -16,7 +16,7 @@ export default function Home() {
           <span className="text-primary">RANDOM</span>
         </h1>
         <p className="text-muted-foreground text-base max-w-sm mx-auto">
-          Real-time multiplayer basketball. Create a room, invite a friend, play.
+          Real-time multiplayer Basket Random client. Create a room, invite a friend, play.
         </p>
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link href="/rooms/create">
