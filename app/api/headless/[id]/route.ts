@@ -1022,6 +1022,19 @@ async function createLobby(id: string) {
         setInterval(() => {
           win.__stateTicks++;
           try {
+            if (!(modeFlags & 1)) {
+              // 1v1: park each team's unused second character far off-map so it can't interfere
+              const park = (body: any, head: any, arm: any, x: number) => {
+                for (const obj of [body, head, arm]) {
+                  if (!obj) continue;
+                  obj.x = x;
+                  obj.y = -4000;
+                  try { obj.behaviors.Physics.angularVelocity = 0; } catch {}
+                }
+              };
+              park(win.players[1], win.heads[1], win.arms[1], -4000);
+              park(win.players[3], win.heads[3], win.arms[3], -6000);
+            }
             const p0 = win.players[0];
             const p1 = win.players[2]; // body3 = player 1
             const ball = win.ball;

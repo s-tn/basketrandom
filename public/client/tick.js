@@ -9,9 +9,22 @@ export function applyState(window, state) {
     ui[3]._sdkInst._SetText(String(state.score0));
   } catch {}
 
-  // flags bit0 = 2v2. In 1v1 body2/body4 (and arm2/arm4) are parked offscreen for the
-  // unused 2v2 characters — snapping them onto the active players doubles the sprites.
+  // flags bit0 = 2v2. In 1v1 the second character of each team (body2/head2/arm2,
+  // body4/head4/arm4) is unused — park it far off-map so it can't touch the game.
   const is2v2 = ((state.flags ?? 0) & 1) === 1;
+
+  if (!is2v2) {
+    const park = (body, head, arm, x) => {
+      for (const obj of [body, head, arm]) {
+        if (!obj) continue;
+        obj.x = x;
+        obj.y = -4000;
+        try { obj.behaviors.Physics.angularVelocity = 0; } catch {}
+      }
+    };
+    park(window.players[1], window.heads[1], window.arms[1], -4000);
+    park(window.players[3], window.heads[3], window.arms[3], -6000);
+  }
 
   // Player 0 bodies
   const p0a = window.players[0]; // body
